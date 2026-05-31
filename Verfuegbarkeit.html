@@ -177,6 +177,34 @@
   .toast{position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:var(--ink); color:#fff; padding:11px 18px; border-radius:30px; font-size:13.5px; font-weight:600; z-index:60; box-shadow:var(--shadow); animation:fade .15s ease; display:flex; align-items:center; gap:7px;}
   .toast svg{width:16px;height:16px;}
   .section-label{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:18px 2px 8px;}
+
+  .tabs{display:flex; background:var(--surface-2); border:1px solid var(--line); border-radius:24px; padding:3px; margin:12px 0 16px; font-size:13.5px; font-weight:600;}
+  .tabs .tab{flex:1; text-align:center; padding:9px; border-radius:22px; color:var(--muted); cursor:pointer; transition:background .12s;}
+  .tabs .tab.active{background:var(--surface); color:var(--ink); box-shadow:var(--shadow);}
+  .clockbig{text-align:center; margin:8px 0 2px;}
+  .clockbig .t{font-size:46px; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
+  .clockbig .d{font-size:14px; color:var(--muted);}
+  .tstatus{text-align:center; margin:12px 0 18px;}
+  .tstatus .pill{display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:600; padding:6px 14px; border-radius:20px;}
+  .pill.in{background:var(--green-bg); color:var(--green-ink);}
+  .pill.out{background:var(--surface-2); color:var(--muted);}
+  .pill.brk{background:#fbeedd; color:#854f0b;}
+  .pill .dot{width:8px;height:8px;border-radius:50%;}
+  .stampbtns{display:flex; gap:10px; margin-bottom:16px;}
+  .bigbtn{flex:1; border:none; border-radius:var(--radius); padding:16px; font-size:16px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; color:#fff; transition:transform .05s;}
+  .bigbtn:active{transform:scale(.98);}
+  .bigbtn svg{width:20px;height:20px;}
+  .bigbtn.kommen{background:var(--green);}
+  .bigbtn.gehen{background:var(--red);}
+  .bigbtn.pause{background:var(--surface-2); color:var(--ink); border:0.5px solid var(--line);}
+  .bigbtn.pauseend{background:#ef9f27; color:#3a2a06;}
+  .todaycard{background:var(--surface-2); border-radius:var(--radius); padding:13px 15px; margin-bottom:14px;}
+  .todaycard .h{font-size:11.5px; color:var(--muted); font-weight:600; margin-bottom:9px; text-transform:uppercase; letter-spacing:.04em;}
+  .trow{display:flex; justify-content:space-between; font-size:13.5px; margin-bottom:6px;}
+  .trow .k{color:var(--muted);}
+  .trow.total{border-top:0.5px solid var(--line); margin-top:8px; padding-top:8px; font-weight:700; margin-bottom:2px;}
+  .weeksum{text-align:center; font-size:13px; color:var(--muted);}
+  .ptable .cell-run{color:#854f0b; font-weight:600; font-size:11.5px;}
 </style>
 </head>
 <body>
@@ -201,6 +229,9 @@ const I = {
   bsp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H8L2 12l6 7h13a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1Z"/><path d="m15 9-5 6M10 9l5 6"/></svg>',
   dash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg>',
   dl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  stopp:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+  coffee:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13v4a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z"/><path d="M17 9h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M7 3v2M11 3v2"/></svg>',
   users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0M16 5a3.5 3.5 0 0 1 0 7M21 20a6 6 0 0 0-4-5.7"/></svg>',
   trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>'
 };
@@ -220,6 +251,7 @@ const SEED_EMPLOYEES = []; // Namen liegen jetzt in mitarbeiter.json
 const S = { screen:'login', pin:'', err:'', user:null, employees:[], offset:0,
   data:null, defaultTime:{from:'Egal',to:'—'}, picker:null, plannerRows:null, plannerLoading:false, showMgr:false };
 S.employees = SEED_EMPLOYEES.slice();
+Object.assign(S, {empTab:'avail', timeWeek:null, clockTimer:null, plTab:'avail', plTimeRows:null, plTimeLoading:false});
 
 /* ---------- storage ---------- */
 const hasStore = (typeof window!=='undefined' && window.storage && typeof window.storage.get==='function');
@@ -260,6 +292,7 @@ function toast(msg){ const t=document.createElement('div'); t.className='toast';
 
 /* ===================================================== RENDER ===================================================== */
 function render(){
+  if(S.clockTimer){ clearInterval(S.clockTimer); S.clockTimer=null; }
   if(S.screen==='login') renderLogin();
   else if(S.screen==='employee') renderEmployee();
   else if(S.screen==='planner') renderPlanner();
@@ -301,8 +334,9 @@ async function doLogin(){
   if(pin===ADMIN_CODE){ S.pin=''; S.err=''; S.screen='planner'; render(); return loadPlanner(); }
   const emp=S.employees.find(e=>e.id===pin);
   if(!emp){ S.err='Unbekannte Personalnummer'; return renderLogin(); }
-  S.user=emp; S.pin=''; S.err=''; S.offset=0;
+  S.user=emp; S.pin=''; S.err=''; S.offset=0; S.empTab='avail';
   S.data = (await loadAvail(emp.id, 0)) || emptyWeek();
+  S.timeWeek = (await loadTimeWeek(emp.id)) || {};
   S.screen='employee'; render();
 }
 
@@ -316,6 +350,27 @@ async function changeWeek(delta){
 function persist(){ saveAvail(S.user.id, S.offset, S.data); }
 
 function renderEmployee(){
+  const topbar = `
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:11px;">
+        <div class="avatar">${initials(S.user.name)}</div>
+        <div><h1>${S.user.name}</h1><div class="muted" style="font-size:12px;">Nr. ${S.user.id}</div></div>
+      </div>
+      <button class="btn btn-ghost" id="logout" style="padding:8px;">Abmelden</button>
+    </div>`;
+  const tabs = `<div class="tabs">
+      <div class="tab ${S.empTab==='avail'?'active':''}" data-tab="avail">Verfügbarkeit</div>
+      <div class="tab ${S.empTab==='time'?'active':''}" data-tab="time">Zeiterfassung</div>
+    </div>`;
+  const inner = S.empTab==='time' ? empTimeHTML() : empAvailHTML();
+  APP.innerHTML = topbar + `<div class="screen">` + tabs + inner + `</div>`;
+
+  document.getElementById('logout').onclick=()=>{ S.screen='login'; S.user=null; S.timeWeek=null; S.gwOpen=false; S.empTab='avail'; render(); };
+  APP.querySelectorAll('[data-tab]').forEach(t=>t.onclick=()=>{ S.empTab=t.dataset.tab; renderEmployee(); });
+  if(S.empTab==='time') wireEmpTime(); else wireEmpAvail();
+}
+
+function empAvailHTML(){
   const w=weekMeta(S.offset);
   const rows = DAYS.map((d,idx)=>{
     const day=S.data[d[0]]||{a:false};
@@ -328,22 +383,12 @@ function renderEmployee(){
         : `<span class="offlabel">Nicht verfügbar</span>`}
     </div>`;
   }).join('');
-
-  APP.innerHTML = `
-    <div class="topbar">
-      <div style="display:flex;align-items:center;gap:11px;">
-        <div class="avatar">${initials(S.user.name)}</div>
-        <div><h1>${S.user.name}</h1><div class="muted" style="font-size:12px;">Nr. ${S.user.id}</div></div>
-      </div>
-      <button class="btn btn-ghost" id="logout" style="padding:8px;">Abmelden</button>
-    </div>
-    <div class="screen">
+  return `
       <div class="weeknav">
         <button class="navbtn" id="prev">${I.left}</button>
         <div class="wlabel"><b>KW ${w.num}</b><span>${fmtRange(S.offset)}</span></div>
         <button class="navbtn" id="next">${I.right}</button>
       </div>
-
       <div class="gw ${S.gwOpen?'open':''}" id="gw">
         <div class="gw-head" id="gwHead">
           <div class="ic">${I.cweek}</div>
@@ -361,21 +406,17 @@ function renderEmployee(){
           </div>
         </div>
       </div>
-
       ${rows}
-
       <div class="savebar">
         <div class="status">${I.check}<span>Änderungen werden automatisch gespeichert</span></div>
         <button class="btn btn-primary" id="done" style="width:100%;">Fertig</button>
-      </div>
-    </div>`;
-
-  document.getElementById('logout').onclick=()=>{ S.screen='login'; S.user=null; S.gwOpen=false; render(); };
+      </div>`;
+}
+function wireEmpAvail(){
   document.getElementById('prev').onclick=()=>changeWeek(-1);
   document.getElementById('next').onclick=()=>changeWeek(1);
-  document.getElementById('done').onclick=()=>{ persist(); toast('Gespeichert'); S.screen='login'; S.user=null; S.gwOpen=false; render(); };
+  document.getElementById('done').onclick=()=>{ persist(); toast('Gespeichert'); S.screen='login'; S.user=null; S.timeWeek=null; S.gwOpen=false; S.empTab='avail'; render(); };
   document.getElementById('gwHead').onclick=()=>{ S.gwOpen=!S.gwOpen; document.getElementById('gw').classList.toggle('open',S.gwOpen); };
-
   APP.querySelectorAll('[data-toggle]').forEach(el=>el.parentElement.onclick=(e)=>{
     if(e.target.closest('[data-time]')) return;
     const k=el.parentElement.dataset.day; const day=S.data[k];
@@ -393,6 +434,94 @@ function renderEmployee(){
     });
     persist(); S.gwOpen=true; renderEmployee();
   });
+}
+
+/* ---------- ZEITERFASSUNG (Stempeluhr) ---------- */
+const WD=['Mo','Di','Mi','Do','Fr','Sa','So'];
+const DOWKEYS=['mon','tue','wed','thu','fri','sat','sun'];
+function dowKeyToday(){ return DOWKEYS[(new Date().getDay()+6)%7]; }
+function nowHM(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function hmToMin(hm){ const p=hm.split(':'); return (+p[0])*60+(+p[1]); }
+function minToHHMM(min){ min=Math.max(0,Math.round(min)); return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0'); }
+function legalBreak(g){ if(g>=480) return 60; if(g>=360) return 30; return 0; }
+function computeDay(t, live){
+  if(!t || !t.in) return {gross:0,brk:0,net:0,brkType:'',running:false};
+  if(!t.out && !live) return {gross:0,brk:0,net:0,brkType:'',running:false,incomplete:true};
+  const inM=hmToMin(t.in);
+  const endM = t.out ? hmToMin(t.out) : hmToMin(nowHM());
+  let gross=Math.max(0,endM-inM);
+  let stamped=0;
+  (t.breaks||[]).forEach(b=>{ if(b.s&&b.e) stamped+=Math.max(0,hmToMin(b.e)-hmToMin(b.s)); });
+  if(t.openBreak) stamped+=Math.max(0,endM-hmToMin(t.openBreak));
+  const legal=legalBreak(gross);
+  const brk=Math.max(stamped,legal);
+  const brkType = stamped>=legal ? 'gestempelt' : 'gesetzl. Minimum';
+  return {gross, brk, brkType, net:Math.max(0,gross-brk), running:!t.out};
+}
+async function loadTimeWeek(id){ const w=weekMeta(0); return await sget('timew_'+id+'_'+w.year+'_'+w.num); }
+function saveTimeWeek(){ const w=weekMeta(0); sset('timew_'+S.user.id+'_'+w.year+'_'+w.num, S.timeWeek||{}); }
+function weekNetSum(){ let s=0; DAYS.forEach(d=>{ const e=(S.timeWeek||{})[d[0]]; if(e) s+=computeDay(e, d[0]===dowKeyToday()).net; }); return s; }
+
+function empTimeHTML(){
+  const dk=dowKeyToday();
+  const t=(S.timeWeek||{})[dk]||null;
+  const c=computeDay(t, true);
+  const now=new Date();
+  const dstr = WD[(now.getDay()+6)%7]+', '+now.getDate()+'. '+MON[now.getMonth()];
+  let statusHTML, btns='';
+  if(!t || !t.in){
+    statusHTML=`<span class="pill out">Nicht eingestempelt</span>`;
+    btns=`<button class="bigbtn kommen" data-act="in" style="width:100%">${I.play} Kommen</button>`;
+  } else if(t.out){
+    statusHTML=`<span class="pill out">Feierabend · ${t.out}</span>`;
+  } else if(t.openBreak){
+    statusHTML=`<span class="pill brk"><span class="dot" style="background:#ef9f27"></span>In Pause seit ${t.openBreak}</span>`;
+    btns=`<button class="bigbtn pauseend" data-act="breakend">${I.coffee} Pause beenden</button><button class="bigbtn gehen" data-act="out">${I.stopp} Gehen</button>`;
+  } else {
+    statusHTML=`<span class="pill in"><span class="dot" style="background:var(--green)"></span>Eingestempelt seit ${t.in}</span>`;
+    btns=`<button class="bigbtn pause" data-act="breakstart">${I.coffee} Pause</button><button class="bigbtn gehen" data-act="out">${I.stopp} Gehen</button>`;
+  }
+  let card='';
+  if(t && t.in){
+    let log=`<div class="trow"><span class="k">Kommen</span><span>${t.in}</span></div>`;
+    (t.breaks||[]).forEach(b=>{ log+=`<div class="trow"><span class="k">Pause</span><span>${b.s}–${b.e}</span></div>`; });
+    if(t.openBreak) log+=`<div class="trow"><span class="k">Pause</span><span>${t.openBreak}–…</span></div>`;
+    if(t.out) log+=`<div class="trow"><span class="k">Gehen</span><span>${t.out}</span></div>`;
+    log+=`<div class="trow total"><span>${t.out?'Gearbeitet':'Bisher'}</span><span id="runCounter">${minToHHMM(c.net)} Std</span></div>`;
+    if(c.brk>0) log+=`<div class="trow" style="margin-top:0"><span class="k" style="font-size:12px">abzgl. Pause</span><span style="font-size:12px;color:var(--muted)">${c.brk} min · ${c.brkType}</span></div>`;
+    card=`<div class="todaycard"><div class="h">Heute</div>${log}</div>`;
+  }
+  return `
+    <div class="clockbig"><div class="t" id="bigClock">--:--:--</div><div class="d">${dstr}</div></div>
+    <div class="tstatus">${statusHTML}</div>
+    ${btns?`<div class="stampbtns">${btns}</div>`:''}
+    ${card}
+    <div class="weeksum">Diese Woche gesamt: <b style="color:var(--ink)">${minToHHMM(weekNetSum())} Std</b></div>
+    <div class="status" style="margin-top:18px">${I.check}<span>Stempelzeiten werden automatisch gespeichert</span></div>`;
+}
+function wireEmpTime(){
+  startClock();
+  APP.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
+    const dk=dowKeyToday(); if(!S.timeWeek) S.timeWeek={};
+    let t=S.timeWeek[dk]||{in:null,out:null,breaks:[],openBreak:null};
+    const hm=nowHM(); const act=b.dataset.act;
+    if(act==='in'){ t={in:hm,out:null,breaks:[],openBreak:null}; }
+    else if(act==='out'){ if(t.openBreak){ (t.breaks=t.breaks||[]).push({s:t.openBreak,e:hm}); t.openBreak=null; } t.out=hm; }
+    else if(act==='breakstart'){ t.openBreak=hm; }
+    else if(act==='breakend'){ if(t.openBreak){ (t.breaks=t.breaks||[]).push({s:t.openBreak,e:hm}); t.openBreak=null; } }
+    S.timeWeek[dk]=t; saveTimeWeek(); renderEmployee();
+  });
+}
+function startClock(){
+  const upd=()=>{
+    const el=document.getElementById('bigClock');
+    if(!el){ if(S.clockTimer){clearInterval(S.clockTimer); S.clockTimer=null;} return; }
+    const n=new Date();
+    el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+    const rc=document.getElementById('runCounter'); const dk=dowKeyToday(); const t=(S.timeWeek||{})[dk];
+    if(rc && t && t.in && !t.out) rc.textContent=minToHHMM(computeDay(t,true).net)+' Std';
+  };
+  upd(); if(S.clockTimer) clearInterval(S.clockTimer); S.clockTimer=setInterval(upd,1000);
 }
 
 /* ---------- PICKER ---------- */
@@ -502,29 +631,58 @@ function applyPicker(){
 async function loadPlanner(){
   S.plannerLoading=true; render();
   const rows=[];
-  for(const e of S.employees){
-    const d = await loadAvail(e.id, S.offset);
-    rows.push({emp:e, data:d});
-  }
+  for(const e of S.employees){ rows.push({emp:e, data: await loadAvail(e.id, S.offset)}); }
   S.plannerRows=rows; S.plannerLoading=false; render();
+}
+async function loadPlannerTime(){
+  S.plTimeLoading=true; render();
+  const w=weekMeta(S.offset); const rows=[];
+  for(const e of S.employees){ rows.push({emp:e, data: await sget('timew_'+e.id+'_'+w.year+'_'+w.num)}); }
+  S.plTimeRows=rows; S.plTimeLoading=false; render();
 }
 function renderPlanner(){
   const w=weekMeta(S.offset);
-  let body;
-  if(S.plannerLoading || !S.plannerRows){
-    body=`<div class="loading">Lädt Planungsdaten…</div>`;
-  } else {
-    const head=`<tr><th class="name" style="text-align:left">Name</th>${DAYS.map(d=>`<th>${d[2]}</th>`).join('')}</tr>`;
-    const trs=S.plannerRows.map(r=>{
-      const cells=DAYS.map(d=>{
-        const day=r.data?r.data[d[0]]:null;
-        if(!r.data || day===undefined) return `<td><span class="cell-open">—</span></td>`;
-        if(!day.a) return `<td><span class="cell-off">frei</span></td>`;
-        return `<td><span class="cell-on">${dayLabel(day)}</span></td>`;
+  const tabs=`<div class="tabs">
+      <div class="tab ${S.plTab==='avail'?'active':''}" data-pltab="avail">Verfügbarkeit</div>
+      <div class="tab ${S.plTab==='time'?'active':''}" data-pltab="time">Zeiterfassung</div>
+    </div>`;
+  let body, legend, tools;
+  if(S.plTab==='time'){
+    if(S.plTimeLoading || !S.plTimeRows){ body=`<div class="loading">Lädt Zeitdaten…</div>`; }
+    else {
+      const head=`<tr><th class="name" style="text-align:left">Name</th>${DAYS.map(d=>`<th>${d[2]}</th>`).join('')}<th>Σ</th></tr>`;
+      const trs=S.plTimeRows.map(r=>{
+        let sum=0;
+        const cells=DAYS.map(d=>{
+          const e=r.data?r.data[d[0]]:undefined;
+          if(!e) return `<td><span class="cell-open">—</span></td>`;
+          if(e.in && !e.out) return `<td><span class="cell-run">läuft</span></td>`;
+          const c=computeDay(e,false); sum+=c.net;
+          return `<td><span class="cell-on">${minToHHMM(c.net)}</span></td>`;
+        }).join('');
+        return `<tr><td class="name">${r.emp.name}<div class="muted" style="font-size:11px;font-weight:500">Nr. ${r.emp.id}</div></td>${cells}<td><b>${minToHHMM(sum)}</b></td></tr>`;
       }).join('');
-      return `<tr><td class="name">${r.emp.name}<div class="muted" style="font-size:11px;font-weight:500">Nr. ${r.emp.id}</div></td>${cells}</tr>`;
-    }).join('');
-    body=`<div class="ptbl-wrap"><table class="ptable">${head}${trs}</table></div>`;
+      body=`<div class="ptbl-wrap"><table class="ptable">${head}${trs}</table></div>`;
+    }
+    legend=`<div class="legend"><span><i style="background:var(--green)"></i>gearbeitete Std (Pause abgezogen)</span><span><i style="background:#d8d3c9"></i>keine Stempelung</span></div>`;
+    tools=`<button class="btn mini" id="exportTime">${I.dl} Zeiten als CSV exportieren</button>`;
+  } else {
+    if(S.plannerLoading || !S.plannerRows){ body=`<div class="loading">Lädt Planungsdaten…</div>`; }
+    else {
+      const head=`<tr><th class="name" style="text-align:left">Name</th>${DAYS.map(d=>`<th>${d[2]}</th>`).join('')}</tr>`;
+      const trs=S.plannerRows.map(r=>{
+        const cells=DAYS.map(d=>{
+          const day=r.data?r.data[d[0]]:null;
+          if(!r.data || day===undefined) return `<td><span class="cell-open">—</span></td>`;
+          if(!day.a) return `<td><span class="cell-off">frei</span></td>`;
+          return `<td><span class="cell-on">${dayLabel(day)}</span></td>`;
+        }).join('');
+        return `<tr><td class="name">${r.emp.name}<div class="muted" style="font-size:11px;font-weight:500">Nr. ${r.emp.id}</div></td>${cells}</tr>`;
+      }).join('');
+      body=`<div class="ptbl-wrap"><table class="ptable">${head}${trs}</table></div>`;
+    }
+    legend=`<div class="legend"><span><i style="background:var(--green)"></i>verfügbar (mit Zeit)</span><span><i style="background:var(--red)"></i>nicht verfügbar</span><span><i style="background:#d8d3c9"></i>noch nicht eingetragen</span></div>`;
+    tools=`<button class="btn mini" id="exportCsv">${I.dl} CSV exportieren (für Einsatzplan)</button>`;
   }
 
   APP.innerHTML=`
@@ -533,28 +691,30 @@ function renderPlanner(){
       <button class="btn btn-ghost" id="plLogout" style="padding:8px;">${I.back}</button>
     </div>
     <div class="screen">
+      ${tabs}
       <div class="weeknav">
         <button class="navbtn" id="plPrev">${I.left}</button>
         <div class="wlabel"><b>KW ${w.num}</b><span>${fmtRange(S.offset)}</span></div>
         <button class="navbtn" id="plNext">${I.right}</button>
       </div>
-      <div class="legend">
-        <span><i style="background:var(--green)"></i>verfügbar (mit Zeit)</span>
-        <span><i style="background:var(--red)"></i>nicht verfügbar</span>
-        <span><i style="background:#d8d3c9"></i>noch nicht eingetragen</span>
-      </div>
+      ${legend}
       ${body}
       <div class="toolbar">
-        <button class="btn mini" id="exportCsv">${I.dl} CSV exportieren (für Einsatzplan)</button>
+        ${tools}
         <button class="btn mini" id="toggleMgr">${I.users} Mitarbeiter verwalten</button>
       </div>
       ${S.showMgr?renderMgr():''}
     </div>`;
 
-  document.getElementById('plLogout').onclick=()=>{ S.screen='login'; S.plannerRows=null; S.showMgr=false; render(); };
-  document.getElementById('plPrev').onclick=()=>{ S.offset--; loadPlanner(); };
-  document.getElementById('plNext').onclick=()=>{ S.offset++; loadPlanner(); };
-  document.getElementById('exportCsv').onclick=exportCsv;
+  document.getElementById('plLogout').onclick=()=>{ S.screen='login'; S.plannerRows=null; S.plTimeRows=null; S.showMgr=false; S.plTab='avail'; render(); };
+  document.getElementById('plPrev').onclick=()=>{ S.offset--; S.plTab==='time'?loadPlannerTime():loadPlanner(); };
+  document.getElementById('plNext').onclick=()=>{ S.offset++; S.plTab==='time'?loadPlannerTime():loadPlanner(); };
+  APP.querySelectorAll('[data-pltab]').forEach(t=>t.onclick=()=>{
+    S.plTab=t.dataset.pltab;
+    if(S.plTab==='time' && !S.plTimeRows) loadPlannerTime(); else render();
+  });
+  const ec=document.getElementById('exportCsv'); if(ec) ec.onclick=exportCsv;
+  const et=document.getElementById('exportTime'); if(et) et.onclick=exportTimeCsv;
   document.getElementById('toggleMgr').onclick=()=>{ S.showMgr=!S.showMgr; render(); };
   if(S.showMgr) wireMgr();
 }
@@ -600,6 +760,22 @@ function exportCsv(){
   const url=URL.createObjectURL(blob); const a=document.createElement('a');
   a.href=url; a.download='Verfuegbarkeit_KW'+w.num+'_'+w.year+'.csv'; a.click();
   URL.revokeObjectURL(url); toast('CSV exportiert');
+}
+
+function exportTimeCsv(){
+  const w=weekMeta(S.offset);
+  const header=['Name','Personalnr.',...DAYS.map(d=>d[2]),'Summe'];
+  const lines=[header.join(';')];
+  (S.plTimeRows||[]).forEach(r=>{
+    let sum=0;
+    const cells=DAYS.map(d=>{ const e=r.data?r.data[d[0]]:undefined; if(!e) return ''; if(e.in&&!e.out) return 'laeuft'; const c=computeDay(e,false); sum+=c.net; return minToHHMM(c.net).replace(':',','); });
+    lines.push([r.emp.name, r.emp.id, ...cells, minToHHMM(sum).replace(':',',')].join(';'));
+  });
+  const csv='\uFEFF'+lines.join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='Arbeitszeit_KW'+w.num+'_'+w.year+'.csv'; a.click();
+  URL.revokeObjectURL(url); toast('Zeiten exportiert');
 }
 
 /* ---------- boot ---------- */
