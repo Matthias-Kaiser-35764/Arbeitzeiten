@@ -43,6 +43,7 @@
   .btn:active{transform:scale(.98);}
   .btn-primary{background:var(--accent); border-color:var(--accent); color:#fff;}
   .btn-ghost{background:transparent; border-color:transparent; color:var(--muted);}
+  .btn svg{width:18px;height:18px;vertical-align:-3px;}
   .muted{color:var(--muted);}
 
   /* topbar */
@@ -688,7 +689,7 @@ function renderPlanner(){
   APP.innerHTML=`
     <div class="topbar">
       <div class="planner-head">${I.users}<h1>Planung · alle Mitarbeiter</h1></div>
-      <button class="btn btn-ghost" id="plLogout" style="padding:8px;">${I.back}</button>
+      <button class="btn btn-ghost" id="plLogout">Abmelden</button>
     </div>
     <div class="screen">
       ${tabs}
