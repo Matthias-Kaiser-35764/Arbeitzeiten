@@ -206,6 +206,8 @@
   .trow.total{border-top:0.5px solid var(--line); margin-top:8px; padding-top:8px; font-weight:700; margin-bottom:2px;}
   .weeksum{text-align:center; font-size:13px; color:var(--muted);}
   .ptable .cell-run{color:#854f0b; font-weight:600; font-size:11.5px;}
+  .bred{color:var(--red); font-weight:600;}
+  .btag{font-size:10.5px; color:var(--muted); font-weight:500;}
 </style>
 </head>
 <body>
@@ -437,60 +439,123 @@ function wireEmpAvail(){
   });
 }
 
-/* ---------- ZEITERFASSUNG (Stempeluhr) ---------- */
+/* ---------- ZEITERFASSUNG (Stempeluhr, § 4 ArbZG) ---------- */
 const WD=['Mo','Di','Mi','Do','Fr','Sa','So'];
 const DOWKEYS=['mon','tue','wed','thu','fri','sat','sun'];
 function dowKeyToday(){ return DOWKEYS[(new Date().getDay()+6)%7]; }
 function nowHM(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
 function hmToMin(hm){ const p=hm.split(':'); return (+p[0])*60+(+p[1]); }
 function minToHHMM(min){ min=Math.max(0,Math.round(min)); return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0'); }
-function legalBreak(g){ if(g>=480) return 60; if(g>=360) return 30; return 0; }
+function req4(w){ if(w>540) return 45; if(w>360) return 30; return 0; }
+function normalizeEntry(t){
+  if(!t) return {sessions:[],openBreak:null};
+  if(t.sessions) return t;
+  if(t.in) return {sessions:[{in:t.in,out:t.out||null,breaks:t.breaks||[]}], openBreak:t.openBreak||null};
+  return {sessions:[],openBreak:null};
+}
+function insertBreakInterval(iv, bs, be){
+  for(let i=0;i<iv.length;i++){
+    if(bs<iv[i][1] && be>iv[i][0]){
+      const a=iv[i][0], b=iv[i][1]; iv.splice(i,1);
+      const parts=[]; if(a<bs) parts.push([a,bs]); if(be<b) parts.push([be,b]);
+      iv.splice(i,0,...parts); return;
+    }
+  }
+}
 function computeDay(t, live){
-  if(!t || !t.in) return {gross:0,brk:0,net:0,brkType:'',running:false};
-  if(!t.out && !live) return {gross:0,brk:0,net:0,brkType:'',running:false,incomplete:true};
-  const inM=hmToMin(t.in);
-  const endM = t.out ? hmToMin(t.out) : hmToMin(nowHM());
-  let gross=Math.max(0,endM-inM);
-  let stamped=0;
-  (t.breaks||[]).forEach(b=>{ if(b.s&&b.e) stamped+=Math.max(0,hmToMin(b.e)-hmToMin(b.s)); });
-  if(t.openBreak) stamped+=Math.max(0,endM-hmToMin(t.openBreak));
-  const legal=legalBreak(gross);
-  const brk=Math.max(stamped,legal);
-  const brkType = stamped>=legal ? 'gestempelt' : 'gesetzl. Minimum';
-  return {gross, brk, brkType, net:Math.max(0,gross-brk), running:!t.out};
+  t=normalizeEntry(t);
+  const sess=t.sessions.filter(s=>s&&s.in);
+  if(!sess.length) return {net:0,brk:0,validBreak:0,breaks:[],notes:[],running:false,gross:0};
+  const now = live ? hmToMin(nowHM()) : null;
+  let gross=0, deduct=0, validBreak=0, running=false;
+  const disp=[]; const notes=[]; const workIntervals=[];
+  sess.forEach((s,si)=>{
+    const sin=hmToMin(s.in);
+    let sout;
+    if(s.out) sout=hmToMin(s.out);
+    else if(live){ sout=now; running=true; } else { return; }
+    if(sout<sin) sout=sin;
+    gross += (sout-sin);
+    const bks=(s.breaks||[]).slice().filter(b=>b&&b.s);
+    if(t.openBreak && !s.out && live) bks.push({s:t.openBreak,e:null});
+    bks.sort((a,b)=>hmToMin(a.s)-hmToMin(b.s));
+    let cursor=sin;
+    bks.forEach(b=>{
+      const bs=hmToMin(b.s); let be=b.e?hmToMin(b.e):(live?now:bs); if(be<bs) be=bs;
+      let dur=be-bs, redExt=0, vEnd=be;
+      if(dur<15){ vEnd=bs+15; redExt=15-dur; }
+      const vDur=vEnd-bs; deduct+=vDur; validBreak+=vDur;
+      disp.push({s:b.s,e:minToHHMM(vEnd),red:redExt,kind:'stamped'});
+      if(bs>cursor) workIntervals.push([cursor,bs]);
+      cursor=Math.max(cursor,vEnd);
+    });
+    if(sout>cursor) workIntervals.push([cursor,sout]);
+    if(si>0){ const prev=sess[si-1]; if(prev.out){ const gap=sin-hmToMin(prev.out); if(gap>=15){ validBreak+=gap; disp.push({s:prev.out,e:s.in,red:0,kind:'gap'}); } } }
+  });
+  const firstIn=hmToMin(sess[0].in);
+  const lastS=sess[sess.length-1];
+  const lastOut = lastS.out ? hmToMin(lastS.out) : (live?now:firstIn);
+  const w0 = gross-deduct;
+  const R = req4(w0);
+  let topUp = Math.max(0, R-validBreak);
+  if(topUp>0){
+    deduct+=topUp; validBreak+=topUp;
+    const mid=Math.round((firstIn+lastOut)/2 - topUp/2);
+    disp.push({s:minToHHMM(mid),e:minToHHMM(mid+topUp),red:topUp,kind:'auto'});
+    insertBreakInterval(workIntervals, mid, mid+topUp);
+  }
+  let guard=0;
+  while(guard++<12){
+    workIntervals.sort((a,b)=>a[0]-b[0]);
+    const viol=workIntervals.find(iv=>(iv[1]-iv[0])>360);
+    if(!viol) break;
+    const cut=viol[0]+360; deduct+=15; validBreak+=15;
+    disp.push({s:minToHHMM(cut),e:minToHHMM(cut+15),red:15,kind:'auto6'});
+    if(notes.indexOf('Länger als 6 Std. am Stück – Pause ergänzt')<0) notes.push('Länger als 6 Std. am Stück – Pause ergänzt');
+    insertBreakInterval(workIntervals, cut, cut+15);
+  }
+  disp.sort((a,b)=>hmToMin(a.s)-hmToMin(b.s));
+  return {net:Math.max(0,gross-deduct), brk:deduct, validBreak, breaks:disp, notes, running, gross};
 }
 async function loadTimeWeek(id){ const w=weekMeta(0); return await sget('timew_'+id+'_'+w.year+'_'+w.num); }
 function saveTimeWeek(){ const w=weekMeta(0); sset('timew_'+S.user.id+'_'+w.year+'_'+w.num, S.timeWeek||{}); }
 function weekNetSum(){ let s=0; DAYS.forEach(d=>{ const e=(S.timeWeek||{})[d[0]]; if(e) s+=computeDay(e, d[0]===dowKeyToday()).net; }); return s; }
 
+function breakTag(b){
+  if(b.kind==='gap') return 'zwischen Schichten';
+  if(b.kind==='auto') return '§4 ergänzt';
+  if(b.kind==='auto6') return '>6 Std ergänzt';
+  if(b.red>0) return 'rot +'+b.red+' min';
+  return '';
+}
 function empTimeHTML(){
   const dk=dowKeyToday();
-  const t=(S.timeWeek||{})[dk]||null;
+  const t=normalizeEntry((S.timeWeek||{})[dk]);
   const c=computeDay(t, true);
+  const openS=t.sessions.find(s=>!s.out);
   const now=new Date();
   const dstr = WD[(now.getDay()+6)%7]+', '+now.getDate()+'. '+MON[now.getMonth()];
   let statusHTML, btns='';
-  if(!t || !t.in){
-    statusHTML=`<span class="pill out">Nicht eingestempelt</span>`;
-    btns=`<button class="bigbtn kommen" data-act="in" style="width:100%">${I.play} Kommen</button>`;
-  } else if(t.out){
-    statusHTML=`<span class="pill out">Feierabend · ${t.out}</span>`;
-  } else if(t.openBreak){
+  if(t.openBreak && openS){
     statusHTML=`<span class="pill brk"><span class="dot" style="background:#ef9f27"></span>In Pause seit ${t.openBreak}</span>`;
     btns=`<button class="bigbtn pauseend" data-act="breakend">${I.coffee} Pause beenden</button><button class="bigbtn gehen" data-act="out">${I.stopp} Gehen</button>`;
-  } else {
-    statusHTML=`<span class="pill in"><span class="dot" style="background:var(--green)"></span>Eingestempelt seit ${t.in}</span>`;
+  } else if(openS){
+    statusHTML=`<span class="pill in"><span class="dot" style="background:var(--green)"></span>Eingestempelt seit ${openS.in}</span>`;
     btns=`<button class="bigbtn pause" data-act="breakstart">${I.coffee} Pause</button><button class="bigbtn gehen" data-act="out">${I.stopp} Gehen</button>`;
+  } else {
+    const last=t.sessions.length?t.sessions[t.sessions.length-1]:null;
+    statusHTML = last ? `<span class="pill out">Letzte Schicht bis ${last.out}</span>` : `<span class="pill out">Nicht eingestempelt</span>`;
+    btns=`<button class="bigbtn kommen" data-act="in" style="width:100%">${I.play} ${last?'Weitere Schicht':'Kommen'}</button>`;
   }
   let card='';
-  if(t && t.in){
-    let log=`<div class="trow"><span class="k">Kommen</span><span>${t.in}</span></div>`;
-    (t.breaks||[]).forEach(b=>{ log+=`<div class="trow"><span class="k">Pause</span><span>${b.s}–${b.e}</span></div>`; });
-    if(t.openBreak) log+=`<div class="trow"><span class="k">Pause</span><span>${t.openBreak}–…</span></div>`;
-    if(t.out) log+=`<div class="trow"><span class="k">Gehen</span><span>${t.out}</span></div>`;
-    log+=`<div class="trow total"><span>${t.out?'Gearbeitet':'Bisher'}</span><span id="runCounter">${minToHHMM(c.net)} Std</span></div>`;
-    if(c.brk>0) log+=`<div class="trow" style="margin-top:0"><span class="k" style="font-size:12px">abzgl. Pause</span><span style="font-size:12px;color:var(--muted)">${c.brk} min · ${c.brkType}</span></div>`;
-    card=`<div class="todaycard"><div class="h">Heute</div>${log}</div>`;
+  if(t.sessions.length){
+    let rows='';
+    t.sessions.forEach((s,i)=>{ rows+=`<div class="trow"><span class="k">Schicht${t.sessions.length>1?' '+(i+1):''}</span><span>${s.in} – ${s.out||'läuft'}</span></div>`; });
+    c.breaks.forEach(b=>{ const tag=breakTag(b); const red=b.red>0||b.kind!=='stamped'; rows+=`<div class="trow"><span class="k">Pause</span><span class="${red?'bred':''}">${b.s}–${b.e}${tag?` <span class="btag">(${tag})</span>`:''}</span></div>`; });
+    rows+=`<div class="trow total"><span>${c.running?'Bisher':'Gearbeitet'}</span><span id="runCounter">${minToHHMM(c.net)} Std</span></div>`;
+    if(c.brk>0) rows+=`<div class="trow" style="margin-top:0"><span class="k" style="font-size:12px">abzgl. Pause</span><span style="font-size:12px;color:var(--muted)">${c.brk} min</span></div>`;
+    c.notes.forEach(n=>{ rows+=`<div class="trow" style="margin-top:2px"><span class="bred" style="font-size:11.5px">Hinweis: ${n}</span></div>`; });
+    card=`<div class="todaycard"><div class="h">Heute</div>${rows}</div>`;
   }
   return `
     <div class="clockbig"><div class="t" id="bigClock">--:--:--</div><div class="d">${dstr}</div></div>
@@ -504,12 +569,13 @@ function wireEmpTime(){
   startClock();
   APP.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
     const dk=dowKeyToday(); if(!S.timeWeek) S.timeWeek={};
-    let t=S.timeWeek[dk]||{in:null,out:null,breaks:[],openBreak:null};
+    const t=normalizeEntry(S.timeWeek[dk]);
     const hm=nowHM(); const act=b.dataset.act;
-    if(act==='in'){ t={in:hm,out:null,breaks:[],openBreak:null}; }
-    else if(act==='out'){ if(t.openBreak){ (t.breaks=t.breaks||[]).push({s:t.openBreak,e:hm}); t.openBreak=null; } t.out=hm; }
-    else if(act==='breakstart'){ t.openBreak=hm; }
-    else if(act==='breakend'){ if(t.openBreak){ (t.breaks=t.breaks||[]).push({s:t.openBreak,e:hm}); t.openBreak=null; } }
+    const openS=t.sessions.find(s=>!s.out);
+    if(act==='in'){ if(!openS) t.sessions.push({in:hm,out:null,breaks:[]}); }
+    else if(act==='breakstart'){ if(openS && !t.openBreak) t.openBreak=hm; }
+    else if(act==='breakend'){ if(t.openBreak && openS){ openS.breaks.push({s:t.openBreak,e:hm}); t.openBreak=null; } }
+    else if(act==='out'){ if(openS){ if(t.openBreak){ openS.breaks.push({s:t.openBreak,e:hm}); t.openBreak=null; } openS.out=hm; } }
     S.timeWeek[dk]=t; saveTimeWeek(); renderEmployee();
   });
 }
@@ -519,8 +585,8 @@ function startClock(){
     if(!el){ if(S.clockTimer){clearInterval(S.clockTimer); S.clockTimer=null;} return; }
     const n=new Date();
     el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
-    const rc=document.getElementById('runCounter'); const dk=dowKeyToday(); const t=(S.timeWeek||{})[dk];
-    if(rc && t && t.in && !t.out) rc.textContent=minToHHMM(computeDay(t,true).net)+' Std';
+    const rc=document.getElementById('runCounter'); const t=normalizeEntry((S.timeWeek||{})[dowKeyToday()]);
+    if(rc && t.sessions.some(s=>!s.out)) rc.textContent=minToHHMM(computeDay(t,true).net)+' Std';
   };
   upd(); if(S.clockTimer) clearInterval(S.clockTimer); S.clockTimer=setInterval(upd,1000);
 }
@@ -657,7 +723,9 @@ function renderPlanner(){
         const cells=DAYS.map(d=>{
           const e=r.data?r.data[d[0]]:undefined;
           if(!e) return `<td><span class="cell-open">—</span></td>`;
-          if(e.in && !e.out) return `<td><span class="cell-run">läuft</span></td>`;
+          const ne=normalizeEntry(e);
+          if(!ne.sessions.length) return `<td><span class="cell-open">—</span></td>`;
+          if(ne.sessions.some(s=>!s.out)) return `<td><span class="cell-run">läuft</span></td>`;
           const c=computeDay(e,false); sum+=c.net;
           return `<td><span class="cell-on">${minToHHMM(c.net)}</span></td>`;
         }).join('');
@@ -769,7 +837,7 @@ function exportTimeCsv(){
   const lines=[header.join(';')];
   (S.plTimeRows||[]).forEach(r=>{
     let sum=0;
-    const cells=DAYS.map(d=>{ const e=r.data?r.data[d[0]]:undefined; if(!e) return ''; if(e.in&&!e.out) return 'laeuft'; const c=computeDay(e,false); sum+=c.net; return minToHHMM(c.net).replace(':',','); });
+    const cells=DAYS.map(d=>{ const e=r.data?r.data[d[0]]:undefined; if(!e) return ''; const ne=normalizeEntry(e); if(!ne.sessions.length) return ''; if(ne.sessions.some(s=>!s.out)) return 'laeuft'; const c=computeDay(e,false); sum+=c.net; return minToHHMM(c.net).replace(':',','); });
     lines.push([r.emp.name, r.emp.id, ...cells, minToHHMM(sum).replace(':',',')].join(';'));
   });
   const csv='\uFEFF'+lines.join('\r\n');
