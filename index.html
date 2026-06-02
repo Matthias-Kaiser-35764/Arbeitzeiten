@@ -294,10 +294,12 @@ async function pbList(collection, filter){
 
 /* --- Mitarbeiter --- */
 async function loadEmployees(){
-  const items = await pbList('mitarbeiter', 'aktiv=true');
+  const items = await pbList('mitarbeiter');
   // In das alte Format {id, name} bringen, das der Rest der App erwartet,
   // zusätzlich recId (PocketBase-Datensatz-ID) für spätere Updates merken.
+  // Nur aktive Mitarbeiter anzeigen (Filterung im Code, robuster als Bool-Filter in der API).
   S.employees = items
+    .filter(it=> it.aktiv !== false)
     .map(it=>({ id: String(it.personalnummer), name: it.name, recId: it.id, rolle: it.rolle }))
     .sort((a,b)=>a.name.localeCompare(b.name,'de'));
 }
@@ -448,7 +450,8 @@ async function doLogin(){
   // PIN gegen PocketBase prüfen
   let items=[];
   try{
-    items = await pbList('mitarbeiter', `personalnummer="${S.loginEmp.id}" && pin="${pin}" && aktiv=true`);
+    items = await pbList('mitarbeiter', `personalnummer="${S.loginEmp.id}" && pin="${pin}"`);
+    items = items.filter(it=> it.aktiv !== false);
   }catch(e){ S.busy=false; S.err='Server nicht erreichbar'; return renderLoginPin(); }
   S.busy=false;
   if(!items.length){ S.err='Falsche PIN'; S.pin=''; return renderLoginPin(); }
