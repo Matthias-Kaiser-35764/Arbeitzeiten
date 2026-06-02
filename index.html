@@ -303,6 +303,8 @@ async function loadEmployees(){
     .map(it=>({ id: String(it.personalnummer), name: it.name, recId: it.id, rolle: it.rolle }))
     .sort((a,b)=>a.name.localeCompare(b.name,'de'));
 }
+/* Nur echte Mitarbeiter (ohne Planer/Admin) – für Planungs-Tabellen und Verwaltung */
+function staff(){ return S.employees.filter(e=> e.rolle!=='planer'); }
 
 /* --- Verfügbarkeit ---
    Eine Zeile pro (mitarbeiter, woche). Die Wochendaten liegen als JSON im Feld "status". */
@@ -409,8 +411,6 @@ function renderLoginNr(){
 function loginCheckNr(){
   const nr=S.loginNr.trim();
   if(!nr){ S.err='Bitte Nummer eingeben'; return renderLoginNr(); }
-  // Admin-Zugang: 0000 springt direkt in die Planung (ohne PIN)
-  if(nr===ADMIN_CODE){ S.loginNr=''; S.err=''; S.screen='planner'; render(); return loadPlanner(); }
   const emp=S.employees.find(e=>e.id===nr);
   if(!emp){ S.err='Unbekannte Personalnummer'; return renderLoginNr(); }
   S.loginEmp=emp; S.pin=''; S.err=''; S.loginStep='pin'; renderLogin();
@@ -457,6 +457,11 @@ async function doLogin(){
   if(!items.length){ S.err='Falsche PIN'; S.pin=''; return renderLoginPin(); }
   const rec = items[0];
   const emp = { id:String(rec.personalnummer), name:rec.name, recId:rec.id, rolle:rec.rolle };
+  // Planer/Admin → direkt in die Planungs-Ansicht (keine PIN-Änderung erzwingen)
+  if(emp.rolle==='planer'){
+    S.user=emp; S.pin=''; S.err=''; S.loginStep='nr'; S.loginNr=''; S.loginEmp=null;
+    S.screen='planner'; render(); return loadPlanner();
+  }
   // Erstlogin mit Standard-PIN 1111 → neue PIN erzwingen
   if(pin===DEFAULT_PIN){
     S.loginEmp = emp; S.pin=''; S.setPin1=''; S.setPinStage=1; S.err='';
@@ -906,13 +911,13 @@ function applyPicker(){
 async function loadPlanner(){
   S.plannerLoading=true; render();
   const rows=[];
-  for(const e of S.employees){ rows.push({emp:e, data: await loadAvail(e.id, S.offset)}); }
+  for(const e of staff()){ rows.push({emp:e, data: await loadAvail(e.id, S.offset)}); }
   S.plannerRows=rows; S.plannerLoading=false; render();
 }
 async function loadPlannerTime(){
   S.plTimeLoading=true; render();
   const w=weekMeta(S.offset); const woche=w.year+'-'+String(w.num).padStart(2,'0'); const rows=[];
-  for(const e of S.employees){
+  for(const e of staff()){
     let data=null;
     if(e.recId){
       const items = await pbList('zeiten', `mitarbeiter="${e.recId}" && datum="${woche}"`);
@@ -1005,7 +1010,7 @@ function renderPlanner(){
 function renderMgr(){
   return `<div class="empmgr card" style="padding:14px 16px;">
     <div class="section-label" style="margin-top:0">Mitarbeiter & Personalnummern</div>
-    ${S.employees.slice().sort((a,b)=>a.id-b.id).map(e=>`
+    ${staff().slice().sort((a,b)=>a.id-b.id).map(e=>`
       <div class="emp-row"><span class="num">${e.id}</span><span class="nm">${e.name}</span>
         <button class="btn btn-ghost mini" data-resetpin="${e.id}" style="padding:6px 10px;font-size:12px;">PIN zurücksetzen</button>
         <button class="del" data-del="${e.id}">${I.trash}</button></div>`).join('')}
@@ -1014,7 +1019,7 @@ function renderMgr(){
       <input id="newName" placeholder="Name">
       <button class="btn btn-primary mini" id="addEmp">Hinzufügen</button>
     </div>
-    <div class="muted" style="font-size:11.5px;margin-top:10px;">Admin-Zugang zu dieser Ansicht: Personalnummer ${ADMIN_CODE}</div>
+    <div class="muted" style="font-size:11.5px;margin-top:10px;">Neue Mitarbeiter erhalten die Start-PIN ${DEFAULT_PIN} und legen beim ersten Login eine eigene PIN fest.</div>
   </div>`;
 }
 function wireMgr(){
