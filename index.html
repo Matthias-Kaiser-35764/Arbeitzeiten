@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Verfügbarkeit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#efece6;
+    --surface:#ffffff;
+    --surface-2:#f5f3ee;
+    --ink:#22262b;
+    --muted:#76746d;
+    --line:#e3ded5;
+    --accent:#1f6f5c;
+    --accent-ink:#13473a;
+    --green:#2f9e44; --green-bg:#e7f5ea; --green-ink:#1b6b2c;
+    --red:#e03131; --red-bg:#fdecec; --red-ink:#8b1f1f;
+    --radius:14px; --radius-sm:10px;
+    --shadow:0 1px 2px rgba(30,28,22,.06), 0 8px 24px rgba(30,28,22,.06);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    font-family:'Manrope',system-ui,sans-serif;
+    background:var(--paper); color:var(--ink);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{max-width:520px; margin:0 auto; padding:0 0 40px;}
+  #app.wide{max-width:940px;}
+  button{font-family:inherit; cursor:pointer;}
+  .scroll-hide::-webkit-scrollbar{display:none;}
+  .scroll-hide{scrollbar-width:none;}
+
+  /* generic */
+  .screen{padding:18px 16px 0;}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);}
+  .btn{border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:var(--radius-sm); padding:11px 14px; font-size:15px; font-weight:600; transition:transform .05s, background .15s;}
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .btn-ghost{background:transparent; border-color:transparent; color:var(--muted);}
+  .btn svg{width:18px;height:18px;vertical-align:-3px;}
+  .muted{color:var(--muted);}
+
+  /* topbar */
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:16px 16px 8px;}
+  .topbar h1{font-size:18px; font-weight:700; margin:0; letter-spacing:-.01em;}
+  .avatar{width:38px; height:38px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;}
+
+  /* login */
+  .login-wrap{padding:40px 22px 0; text-align:center;}
+  .brandmark{width:62px; height:62px; border-radius:18px; background:var(--accent); color:#fff; display:inline-flex; align-items:center; justify-content:center; margin-bottom:14px;}
+  .brandmark svg{width:32px; height:32px;}
+  .login-title{font-size:23px; font-weight:800; margin:0 0 4px; letter-spacing:-.02em;}
+  .login-sub{font-size:14px; color:var(--muted); margin:0 0 26px;}
+  .pin-display{display:flex; align-items:center; justify-content:center; gap:4px; height:60px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); font-size:30px; font-weight:700; letter-spacing:8px; box-shadow:var(--shadow);}
+  .pin-placeholder{color:#c9c4ba; letter-spacing:6px;}
+  .login-note{font-size:12.5px; color:var(--muted); margin:8px 0 22px;}
+  .keypad{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:340px; margin:0 auto 18px;}
+  .key{height:62px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius); font-size:24px; font-weight:600; color:var(--ink); display:flex; align-items:center; justify-content:center; transition:transform .05s, background .12s;}
+  .key:active{transform:scale(.96); background:var(--surface-2);}
+  .key.fn{font-size:15px; color:var(--muted); font-weight:600;}
+  .key svg{width:24px; height:24px;}
+  .login-err{color:var(--red); font-size:13.5px; font-weight:600; min-height:18px; margin-bottom:6px;}
+
+  /* week nav */
+  .weeknav{display:flex; align-items:center; justify-content:space-between; background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius-sm); padding:8px 6px; margin:12px 0;}
+  .weeknav .navbtn{width:40px; height:40px; border-radius:10px; border:none; background:transparent; display:flex; align-items:center; justify-content:center; color:var(--muted);}
+  .weeknav .navbtn:active{background:#e8e4db;}
+  .weeknav .wlabel{text-align:center; line-height:1.2;}
+  .weeknav .wlabel b{font-size:15px; font-weight:700;}
+  .weeknav .wlabel span{display:block; font-size:12px; color:var(--muted);}
+  .navbtn svg{width:20px;height:20px;}
+
+  /* ganze woche */
+  .gw{border:1px dashed var(--line); border-radius:var(--radius-sm); margin-bottom:10px; overflow:hidden;}
+  .gw.open{border-style:solid; border-color:var(--line);}
+  .gw-head{display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--surface-2);}
+  .gw-head .ic{width:34px;height:34px;border-radius:9px;background:#e8e4db;display:flex;align-items:center;justify-content:center;color:var(--muted);}
+  .gw-head .ic svg{width:19px;height:19px;}
+  .gw-head .t{flex:1;}
+  .gw-head .t b{font-size:14.5px; font-weight:700; display:block;}
+  .gw-head .t span{font-size:12px; color:var(--muted);}
+  .gw-head .chev svg{width:18px;height:18px;color:var(--muted); transition:transform .2s;}
+  .gw.open .gw-head .chev svg{transform:rotate(180deg);}
+  .gw-body{padding:8px; display:none;}
+  .gw.open .gw-body{display:block;}
+  .gw-act{display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:9px; margin-bottom:6px; font-size:14px; font-weight:600;}
+  .gw-act:active{transform:scale(.99);}
+  .gw-act .box{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .gw-act svg{width:17px;height:17px;}
+  .gw-act.on{background:var(--green-bg); color:var(--green-ink);} .gw-act.on .box{background:var(--green); color:#fff;}
+  .gw-act.off{background:var(--red-bg); color:var(--red-ink);} .gw-act.off .box{border:1.5px solid var(--red);}
+  .gw-act.neutral{background:var(--surface-2); color:var(--ink);} .gw-act.neutral .box{background:#e8e4db; color:var(--muted);}
+  .gw-time{display:flex; align-items:center; gap:11px; padding:10px 12px 4px;}
+  .gw-time .lab{flex:1; font-size:14px; font-weight:600;}
+  .gw-time svg{width:18px;height:18px;color:var(--muted);}
+  .gw-divider{height:1px;background:var(--line);margin:8px 4px;}
+
+  /* day rows */
+  .day{display:flex; align-items:center; gap:13px; padding:13px 14px; border-radius:var(--radius-sm); margin-bottom:8px; border:1px solid transparent; transition:background .12s;}
+  .day.on{background:var(--green-bg);} .day.off{background:var(--red-bg);}
+  .day .chk{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .day.on .chk{background:var(--green); color:#fff;}
+  .day.off .chk{background:var(--surface); border:1.5px solid var(--red);}
+  .day .chk svg{width:18px;height:18px;}
+  .day .dlabel{flex:1;}
+  .day .dlabel b{font-size:15.5px; font-weight:700;}
+  .day.on .dlabel b{color:var(--green-ink);} .day.off .dlabel b{color:var(--red-ink);}
+  .day .dlabel span{font-size:12.5px; margin-left:6px;}
+  .day.on .dlabel span{color:var(--green);} .day.off .dlabel span{color:var(--red);}
+  .timechip{display:flex; align-items:center; gap:5px; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:6px 11px; font-size:13px; font-weight:600; color:var(--green-ink);}
+  .timechip svg{width:14px;height:14px;}
+  .offlabel{font-size:12.5px; font-weight:600; color:var(--red-ink);}
+
+  .savebar{position:sticky; bottom:0; background:linear-gradient(180deg, rgba(239,236,230,0), var(--paper) 30%); padding:14px 0 18px; margin-top:4px;}
+  .status{text-align:center; font-size:12.5px; color:var(--muted); margin-bottom:8px; display:flex; align-items:center; justify-content:center; gap:5px;}
+  .status svg{width:15px;height:15px; color:var(--green);}
+
+  /* picker modal */
+  .overlay{position:fixed; inset:0; background:rgba(34,38,43,.45); display:flex; align-items:flex-end; justify-content:center; z-index:50; animation:fade .15s ease;}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .sheet{background:var(--surface); width:100%; max-width:520px; border-radius:20px 20px 0 0; padding:18px 18px calc(18px + env(safe-area-inset-bottom)); animation:slideup .22s cubic-bezier(.2,.8,.2,1);}
+  @keyframes slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .sheet-head{display:flex; align-items:center; gap:9px; margin-bottom:2px;}
+  .sheet-head svg{width:20px;height:20px;color:var(--muted);}
+  .sheet-head b{font-size:16px; font-weight:700;}
+  .sheet-sub{font-size:12.5px; color:var(--muted); margin:0 0 14px 29px;}
+  .wheels{display:flex; align-items:center; gap:10px;}
+  .wheel-col{flex:1;}
+  .wheel-col .wl{font-size:12px; color:var(--muted); text-align:center; margin-bottom:5px; font-weight:600;}
+  .wheel{position:relative; height:180px; overflow-y:auto; background:var(--surface-2); border-radius:var(--radius-sm); scroll-snap-type:y mandatory;}
+  .wheel.disabled{opacity:.4; pointer-events:none;}
+  .wheel-band{position:absolute; left:6px; right:6px; top:72px; height:36px; background:var(--surface); border:1px solid var(--line); border-radius:8px; pointer-events:none;}
+  .wheel-list{position:relative;}
+  .wheel-item{height:36px; line-height:36px; text-align:center; font-size:15px; color:var(--muted); scroll-snap-align:center; transition:color .1s, font-weight .1s, transform .1s; opacity:.5;}
+  .wheel-item.sel{color:var(--ink); font-weight:700; font-size:17px; opacity:1;}
+  .wheel-dash{display:flex; align-items:center; padding-top:22px; color:#c9c4ba;}
+  .wheel-dash svg{width:16px;height:16px;}
+  .result{text-align:center; font-size:14px; margin:15px 0 4px;}
+  .result b{font-weight:700;}
+  .presets-note{background:var(--surface-2); border-radius:var(--radius-sm); padding:9px 11px; margin:10px 0 14px;}
+  .presets-note .h{font-size:11.5px; color:var(--muted); margin-bottom:6px;}
+  .pchip{display:inline-block; background:var(--surface); border:1px solid var(--line); font-size:11.5px; padding:3px 9px; border-radius:20px; margin:0 4px 4px 0;}
+  .sheet-actions{display:flex; gap:9px;}
+  .sheet-actions .btn{flex:1;}
+
+  /* planner */
+  .planner-head{display:flex; align-items:center; gap:8px; margin-bottom:4px;}
+  .ptable{width:100%; border-collapse:collapse; font-size:13px;}
+  .ptable th,.ptable td{padding:8px 6px; text-align:center; border-bottom:1px solid var(--line);}
+  .ptable th{font-weight:700; color:var(--muted); font-size:11.5px; text-transform:uppercase; letter-spacing:.03em;}
+  .ptable td.name{text-align:left; font-weight:600; white-space:nowrap; position:sticky; left:0; background:var(--surface);}
+  .ptable .cell-on{background:var(--green-bg); color:var(--green-ink); border-radius:6px; font-weight:600; font-size:11.5px; padding:5px 3px; display:inline-block; min-width:54px;}
+  .ptable .cell-off{color:var(--red-ink); font-weight:600;}
+  .ptable .cell-open{color:#c4bfb5;}
+  .ptbl-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface);}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin:12px 2px;}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-right:5px;}
+  .toolbar{display:flex; gap:9px; flex-wrap:wrap; margin:12px 0;}
+  .mini{font-size:13px; padding:9px 13px;}
+  .empmgr{margin-top:18px;}
+  .emp-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line);}
+  .emp-row .num{font-variant-numeric:tabular-nums; font-weight:700; width:60px; color:var(--accent-ink);}
+  .emp-row .nm{flex:1; font-size:14px;}
+  .emp-row .del{border:none;background:transparent;color:var(--muted);padding:6px;}
+  .emp-row .del svg{width:18px;height:18px;}
+  .add-form{display:flex; gap:8px; margin-top:12px;}
+  .add-form input{flex:1; min-width:0; border:1px solid var(--line); border-radius:var(--radius-sm); padding:10px 12px; font-family:inherit; font-size:14px; background:var(--surface);}
+  .add-form input.numf{flex:0 0 90px;}
+  .add-form input:focus{outline:none; border-color:var(--accent);}
+
+  .loading{text-align:center; padding:60px 20px; color:var(--muted); font-size:14px;}
+  .toast{position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:var(--ink); color:#fff; padding:11px 18px; border-radius:30px; font-size:13.5px; font-weight:600; z-index:60; box-shadow:var(--shadow); animation:fade .15s ease; display:flex; align-items:center; gap:7px;}
+  .toast svg{width:16px;height:16px;}
+  .section-label{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:18px 2px 8px;}
+
+  .tabs{display:flex; background:var(--surface-2); border:1px solid var(--line); border-radius:24px; padding:3px; margin:12px 0 16px; font-size:13.5px; font-weight:600;}
+  .tabs .tab{flex:1; text-align:center; padding:9px; border-radius:22px; color:var(--muted); cursor:pointer; transition:background .12s;}
+  .tabs .tab.active{background:var(--surface); color:var(--ink); box-shadow:var(--shadow);}
+  .clockbig{text-align:center; margin:8px 0 2px;}
+  .clockbig .t{font-size:46px; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
+  .clockbig .d{font-size:14px; color:var(--muted);}
+  .tstatus{text-align:center; margin:12px 0 18px;}
+  .tstatus .pill{display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:600; padding:6px 14px; border-radius:20px;}
+  .pill.in{background:var(--green-bg); color:var(--green-ink);}
+  .pill.out{background:var(--surface-2); color:var(--muted);}
+  .pill.brk{background:#fbeedd; color:#854f0b;}
+  .pill .dot{width:8px;height:8px;border-radius:50%;}
+  .stampbtns{display:flex; gap:10px; margin-bottom:16px;}
+  .bigbtn{flex:1; border:none; border-radius:var(--radius); padding:16px; font-size:16px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; color:#fff; transition:transform .05s;}
+  .bigbtn:active{transform:scale(.98);}
+  .bigbtn svg{width:20px;height:20px;}
+  .bigbtn.kommen{background:var(--green);}
+  .bigbtn.gehen{background:var(--red);}
+  .bigbtn.pause{background:var(--surface-2); color:var(--ink); border:0.5px solid var(--line);}
+  .bigbtn.pauseend{background:#ef9f27; color:#3a2a06;}
+  .todaycard{background:var(--surface-2); border-radius:var(--radius); padding:13px 15px; margin-bottom:14px;}
+  .todaycard .h{font-size:11.5px; color:var(--muted); font-weight:600; margin-bottom:9px; text-transform:uppercase; letter-spacing:.04em;}
+  .trow{display:flex; justify-content:space-between; font-size:13.5px; margin-bottom:6px;}
+  .trow .k{color:var(--muted);}
+  .trow.total{border-top:0.5px solid var(--line); margin-top:8px; padding-top:8px; font-weight:700; margin-bottom:2px;}
+  .weeksum{text-align:center; font-size:13px; color:var(--muted);}
+  .ptable .cell-run{color:#854f0b; font-weight:600; font-size:11.5px;}
+  .bred{color:var(--red); font-weight:600;}
+  .btag{font-size:10.5px; color:var(--muted); font-weight:500;}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">Lädt…</div></div>
+
+<script>
+const APP = document.getElementById('app');
+
+/* ---------- icons ---------- */
+const I = {
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/><path d="m9 16 2 2 4-4"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l-6 6 6 6M3 12h18" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+  right:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  cweek:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>',
+  bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  bsp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H8L2 12l6 7h13a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1Z"/><path d="m15 9-5 6M10 9l5 6"/></svg>',
+  dash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg>',
+  dl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  stopp:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+  coffee:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13v4a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z"/><path d="M17 9h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M7 3v2M11 3v2"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0M16 5a3.5 3.5 0 0 1 0 7M21 20a6 6 0 0 0-4-5.7"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>'
+};
+
+/* ---------- constants ---------- */
+const PRESETS = ['Egal','Vormittag','Nachmittag','Abend'];
+const TIMES = []; for(let h=6; h<=21; h++){ TIMES.push((h<10?'0':'')+h+':00'); }
+const FROM_OPTIONS = [...PRESETS, ...TIMES];
+const TO_OPTIONS = ['—', ...TIMES];
+const DAYS = [['mon','Montag','Mo'],['tue','Dienstag','Di'],['wed','Mittwoch','Mi'],['thu','Donnerstag','Do'],['fri','Freitag','Fr'],['sat','Samstag','Sa']];
+const MON = ['Jan','Feb','März','Apr','Mai','Juni','Juli','Aug','Sept','Okt','Nov','Dez'];
+const ADMIN_CODE = '0000';
+const DEFAULT_PIN = '1111';
+
+const SEED_EMPLOYEES = []; // Namen liegen jetzt in mitarbeiter.json
+
+/* ---------- state ---------- */
+const S = { screen:'login', pin:'', err:'', user:null, employees:[], offset:0,
+  data:null, defaultTime:{from:'Egal',to:'—'}, picker:null, plannerRows:null, plannerLoading:false, showMgr:false };
+S.employees = SEED_EMPLOYEES.slice();
+Object.assign(S, {empTab:'avail', timeWeek:null, clockTimer:null, plTab:'avail', plTimeRows:null, plTimeLoading:false});
+/* Login-Ablauf: loginStep = 'nr' (Personalnummer) → 'pin' (PIN) → ggf. 'setpin' (neue PIN bei Erstlogin) */
+Object.assign(S, {loginStep:'nr', loginNr:'', loginEmp:null, setPin1:'', setPinStage:1, busy:false});
+
+/* ---------- storage (PocketBase) ----------
+   Die App und PocketBase liegen auf derselben Domain (zeit.edeka-kaiser.de).
+   Deshalb sprechen wir die API einfach relativ über /api an – keine feste Domain nötig.
+   Falls die App lokal/anderswo getestet wird, kann PB_BASE überschrieben werden. */
+const PB_BASE = (location.origin && location.origin.startsWith('http')) ? location.origin : 'https://zeit.edeka-kaiser.de';
+const PB_API = PB_BASE + '/api';
+
+function withTimeout(p, ms){ return Promise.race([ p, new Promise(res=>setTimeout(()=>res(null), ms)) ]); }
+
+/* Kleiner Helfer für PocketBase-REST-Aufrufe */
+async function pbFetch(path, opts){
+  opts = opts || {};
+  const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+  const res = await withTimeout(fetch(PB_API+path, Object.assign({}, opts, {headers})), 8000);
+  if(!res) throw new Error('Zeitüberschreitung – Server nicht erreichbar');
+  return res;
+}
+
+/* Liste der Datensätze einer Collection holen (mit optionalem Filter) */
+async function pbList(collection, filter){
+  let url = '/collections/'+collection+'/records?perPage=500';
+  if(filter) url += '&filter='+encodeURIComponent(filter);
+  const res = await pbFetch(url, {method:'GET'});
+  if(!res.ok) return [];
+  const j = await res.json();
+  return j.items || [];
+}
+
+/* Generisches Speichern eines "Schlüssel = Wert"-Eintrags.
+   Wir bilden die alten Storage-Keys (avail_…, timew_…) auf
+   PocketBase-Datensätze ab, indem wir sie in den passenden
+   Collections als ein Feld "data" (JSON) ablegen, eindeutig je (mitarbeiter, woche, tag/typ). */
+
+/* --- Mitarbeiter --- */
+async function loadEmployees(){
+  const items = await pbList('mitarbeiter', 'aktiv=true');
+  // In das alte Format {id, name} bringen, das der Rest der App erwartet,
+  // zusätzlich recId (PocketBase-Datensatz-ID) für spätere Updates merken.
+  S.employees = items
+    .map(it=>({ id: String(it.personalnummer), name: it.name, recId: it.id, rolle: it.rolle }))
+    .sort((a,b)=>a.name.localeCompare(b.name,'de'));
+}
+
+/* --- Verfügbarkeit ---
+   Eine Zeile pro (mitarbeiter, woche). Die Wochendaten liegen als JSON im Feld "status". */
+async function loadAvail(id, off){
+  const w = weekMeta(off);
+  const woche = w.year+'-'+String(w.num).padStart(2,'0');
+  const emp = S.employees.find(e=>e.id===id);
+  if(!emp || !emp.recId) return null;
+  const items = await pbList('verfuegbarkeit', `mitarbeiter="${emp.recId}" && woche="${woche}"`);
+  if(!items.length) return null;
+  try{ return JSON.parse(items[0].status); }catch(e){ return null; }
+}
+async function saveAvail(id, off, data){
+  const w = weekMeta(off);
+  const woche = w.year+'-'+String(w.num).padStart(2,'0');
+  const emp = S.employees.find(e=>e.id===id);
+  if(!emp || !emp.recId) return;
+  const items = await pbList('verfuegbarkeit', `mitarbeiter="${emp.recId}" && woche="${woche}"`);
+  const body = JSON.stringify({ mitarbeiter: emp.recId, woche, tag:'woche', status: JSON.stringify(data), von:'', bis:'' });
+  if(items.length){
+    await pbFetch('/collections/verfuegbarkeit/records/'+items[0].id, {method:'PATCH', body});
+  } else {
+    await pbFetch('/collections/verfuegbarkeit/records', {method:'POST', body});
+  }
+}
+
+/* ---------- week math ---------- */
+function mondayOf(off){ const n=new Date(); const d=(n.getDay()+6)%7; const m=new Date(n); m.setDate(n.getDate()-d+off*7); m.setHours(0,0,0,0); return m; }
+function isoWeek(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const dn=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-dn+3); const ft=t.getTime(); const ys=new Date(Date.UTC(t.getUTCFullYear(),0,1)); return 1+Math.round((ft-ys.getTime())/6048e5 - ( (ys.getUTCDay()+6)%7 < 4 ? 0 : 0)); }
+function weekMeta(off){
+  const mon = mondayOf(off);
+  const thu = new Date(mon); thu.setDate(mon.getDate()+3);
+  const num = isoWeek(mon);
+  const sat = new Date(mon); sat.setDate(mon.getDate()+5);
+  return { mon, sat, num, year: thu.getFullYear() };
+}
+function fmtRange(off){ const w=weekMeta(off); const a=w.mon, b=w.sat;
+  if(a.getMonth()===b.getMonth()) return a.getDate()+'.–'+b.getDate()+'. '+MON[b.getMonth()];
+  return a.getDate()+'. '+MON[a.getMonth()]+'–'+b.getDate()+'. '+MON[b.getMonth()]; }
+function dayDate(off, idx){ const m=mondayOf(off); const d=new Date(m); d.setDate(m.getDate()+idx); return d.getDate()+'. '+MON[d.getMonth()]; }
+
+/* ---------- helpers ---------- */
+function emptyWeek(){ const o={}; DAYS.forEach(d=>o[d[0]]={a:false}); return o; }
+function dayLabel(day){ if(!day||!day.a) return ''; if(PRESETS.includes(day.from)) return day.from; return day.from+'–'+day.to; }
+function csvCell(day){ if(!day) return ''; if(!day.a) return 'frei'; if(PRESETS.includes(day.from)) return day.from; return day.from+'-'+day.to; }
+function initials(name){ const p=name.replace('/',' ').split(/\s+/).filter(Boolean); return ((p[0]||'')[0]||'')+((p[1]||'')[0]||''); }
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.innerHTML=I.check+'<span>'+msg+'</span>'; document.body.appendChild(t); setTimeout(()=>t.remove(),1600); }
+
+/* ===================================================== RENDER ===================================================== */
+function render(){
+  if(S.clockTimer){ clearInterval(S.clockTimer); S.clockTimer=null; }
+  if(S.screen==='login') renderLogin();
+  else if(S.screen==='employee') renderEmployee();
+  else if(S.screen==='planner') renderPlanner();
+  APP.classList.toggle('wide', S.screen==='planner');
+}
+
+/* ---------- LOGIN ---------- */
+function keypadHTML(){
+  return `<div class="keypad">
+        ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="key" data-k="${n}">${n}</button>`).join('')}
+        <button class="key fn" data-k="C">C</button>
+        <button class="key" data-k="0">0</button>
+        <button class="key fn" data-k="bsp">${I.bsp}</button>
+      </div>`;
+}
+function pinDots(val, len){ // gefüllte PIN als Punkte anzeigen (verdeckt)
+  len = len || 4;
+  let out=[];
+  for(let i=0;i<len;i++){ out.push(val.length>i ? '●' : '<span class="pin-placeholder">○</span>'); }
+  return out.join(' ');
+}
+
+function renderLogin(){
+  if(S.loginStep==='nr') return renderLoginNr();
+  if(S.loginStep==='pin') return renderLoginPin();
+  if(S.loginStep==='setpin') return renderLoginSetPin();
+}
+
+/* Stufe 1: Personalnummer */
+function renderLoginNr(){
+  const shown = S.loginNr || '';
+  const disp = shown ? shown.split('').join(' ') : '<span class="pin-placeholder">– – – –</span>';
+  APP.innerHTML = `
+    <div class="login-wrap">
+      <div class="brandmark">${I.cal}</div>
+      <h2 class="login-title">Anmelden</h2>
+      <p class="login-sub">Personalnummer eingeben</p>
+      <div class="pin-display">${disp}</div>
+      <p class="login-note">Danach folgt die PIN</p>
+      <div class="login-err">${S.err || ((S.empMissing && !S.employees.length) ? 'Verbindung zum Server fehlgeschlagen' : '')}</div>
+      ${keypadHTML()}
+      <button class="btn btn-primary" id="loginBtn" style="width:100%;max-width:340px;">Weiter</button>
+    </div>`;
+  APP.querySelectorAll('.key').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k; S.err='';
+    if(k==='C') S.loginNr='';
+    else if(k==='bsp') S.loginNr=S.loginNr.slice(0,-1);
+    else if(S.loginNr.length<6) S.loginNr+=k;
+    renderLoginNr();
+  });
+  document.getElementById('loginBtn').onclick=loginCheckNr;
+}
+function loginCheckNr(){
+  const nr=S.loginNr.trim();
+  if(!nr){ S.err='Bitte Nummer eingeben'; return renderLoginNr(); }
+  // Admin-Zugang: 0000 springt direkt in die Planung (ohne PIN)
+  if(nr===ADMIN_CODE){ S.loginNr=''; S.err=''; S.screen='planner'; render(); return loadPlanner(); }
+  const emp=S.employees.find(e=>e.id===nr);
+  if(!emp){ S.err='Unbekannte Personalnummer'; return renderLoginNr(); }
+  S.loginEmp=emp; S.pin=''; S.err=''; S.loginStep='pin'; renderLogin();
+}
+
+/* Stufe 2: PIN */
+function renderLoginPin(){
+  APP.innerHTML = `
+    <div class="login-wrap">
+      <div class="brandmark">${I.cal}</div>
+      <h2 class="login-title">${S.loginEmp.name}</h2>
+      <p class="login-sub">PIN eingeben</p>
+      <div class="pin-display">${pinDots(S.pin,4)}</div>
+      <p class="login-note">Nr. ${S.loginEmp.id}</p>
+      <div class="login-err">${S.err||''}</div>
+      ${keypadHTML()}
+      <div style="display:flex;gap:8px;width:100%;max-width:340px;">
+        <button class="btn btn-ghost" id="backBtn" style="flex:0 0 auto;padding:14px 16px;">Zurück</button>
+        <button class="btn btn-primary" id="loginBtn" style="flex:1;">${S.busy?'…':'Anmelden'}</button>
+      </div>
+    </div>`;
+  APP.querySelectorAll('.key').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k; S.err='';
+    if(k==='C') S.pin='';
+    else if(k==='bsp') S.pin=S.pin.slice(0,-1);
+    else if(S.pin.length<4) S.pin+=k;
+    renderLoginPin();
+  });
+  document.getElementById('backBtn').onclick=()=>{ S.loginStep='nr'; S.pin=''; S.err=''; renderLogin(); };
+  document.getElementById('loginBtn').onclick=doLogin;
+}
+async function doLogin(){
+  if(S.busy) return;
+  const pin=S.pin.trim();
+  if(pin.length<4){ S.err='Bitte 4-stellige PIN eingeben'; return renderLoginPin(); }
+  S.busy=true; renderLoginPin();
+  // PIN gegen PocketBase prüfen
+  let items=[];
+  try{
+    items = await pbList('mitarbeiter', `personalnummer="${S.loginEmp.id}" && pin="${pin}" && aktiv=true`);
+  }catch(e){ S.busy=false; S.err='Server nicht erreichbar'; return renderLoginPin(); }
+  S.busy=false;
+  if(!items.length){ S.err='Falsche PIN'; S.pin=''; return renderLoginPin(); }
+  const rec = items[0];
+  const emp = { id:String(rec.personalnummer), name:rec.name, recId:rec.id, rolle:rec.rolle };
+  // Erstlogin mit Standard-PIN 1111 → neue PIN erzwingen
+  if(pin===DEFAULT_PIN){
+    S.loginEmp = emp; S.pin=''; S.setPin1=''; S.setPinStage=1; S.err='';
+    S.loginStep='setpin'; return renderLogin();
+  }
+  await enterEmployee(emp);
+}
+
+/* Stufe 3: neue PIN setzen (bei Erstlogin) */
+function renderLoginSetPin(){
+  const stage = S.setPinStage;
+  const val = stage===1 ? S.setPin1 : S.pin;
+  APP.innerHTML = `
+    <div class="login-wrap">
+      <div class="brandmark">${I.cal}</div>
+      <h2 class="login-title">Neue PIN festlegen</h2>
+      <p class="login-sub">${stage===1?'Wunsch-PIN eingeben (4 Ziffern)':'PIN zur Bestätigung wiederholen'}</p>
+      <div class="pin-display">${pinDots(val,4)}</div>
+      <p class="login-note">Bitte nicht 1111 verwenden</p>
+      <div class="login-err">${S.err||''}</div>
+      ${keypadHTML()}
+      <button class="btn btn-primary" id="loginBtn" style="width:100%;max-width:340px;">${S.busy?'…':(stage===1?'Weiter':'Speichern')}</button>
+    </div>`;
+  APP.querySelectorAll('.key').forEach(b=>b.onclick=()=>{
+    S.err='';
+    const k=b.dataset.k;
+    if(stage===1){
+      if(k==='C') S.setPin1='';
+      else if(k==='bsp') S.setPin1=S.setPin1.slice(0,-1);
+      else if(S.setPin1.length<4) S.setPin1+=k;
+    } else {
+      if(k==='C') S.pin='';
+      else if(k==='bsp') S.pin=S.pin.slice(0,-1);
+      else if(S.pin.length<4) S.pin+=k;
+    }
+    renderLoginSetPin();
+  });
+  document.getElementById('loginBtn').onclick=doSetPin;
+}
+async function doSetPin(){
+  if(S.busy) return;
+  if(S.setPinStage===1){
+    if(S.setPin1.length<4){ S.err='Bitte 4 Ziffern eingeben'; return renderLoginSetPin(); }
+    if(S.setPin1===DEFAULT_PIN){ S.err='Bitte eine andere PIN als 1111 wählen'; S.setPin1=''; return renderLoginSetPin(); }
+    S.setPinStage=2; S.pin=''; S.err=''; return renderLoginSetPin();
+  }
+  // Stufe 2: Bestätigung
+  if(S.pin!==S.setPin1){ S.err='PINs stimmen nicht überein'; S.pin=''; S.setPinStage=1; S.setPin1=''; return renderLoginSetPin(); }
+  S.busy=true; renderLoginSetPin();
+  try{
+    const res = await pbFetch('/collections/mitarbeiter/records/'+S.loginEmp.recId, {method:'PATCH', body: JSON.stringify({pin:S.pin})});
+    if(!res.ok) throw new Error('save');
+  }catch(e){ S.busy=false; S.err='Speichern fehlgeschlagen, erneut versuchen'; return renderLoginSetPin(); }
+  S.busy=false;
+  const emp=S.loginEmp;
+  S.setPin1=''; S.pin='';
+  await enterEmployee(emp);
+}
+
+/* Gemeinsamer Übergang in den Mitarbeiter-Bereich */
+async function enterEmployee(emp){
+  S.user=emp; S.pin=''; S.err=''; S.offset=0; S.empTab='avail';
+  S.loginStep='nr'; S.loginNr=''; S.loginEmp=null;
+  APP.innerHTML='<div class="loading">Lädt…</div>';
+  S.data = (await loadAvail(emp.id, 0)) || emptyWeek();
+  S.timeWeek = (await loadTimeWeek(emp.id)) || {};
+  S.screen='employee'; render();
+}
+
+/* ---------- EMPLOYEE ---------- */
+async function changeWeek(delta){
+  S.offset+=delta;
+  APP.innerHTML='<div class="loading">Lädt Woche…</div>';
+  S.data = (await loadAvail(S.user.id, S.offset)) || emptyWeek();
+  render();
+}
+function persist(){ return saveAvail(S.user.id, S.offset, S.data); }
+function resetLogin(){ S.screen='login'; S.user=null; S.timeWeek=null; S.gwOpen=false; S.empTab='avail';
+  S.loginStep='nr'; S.loginNr=''; S.loginEmp=null; S.pin=''; S.err=''; S.setPin1=''; S.setPinStage=1; }
+
+function renderEmployee(){
+  const topbar = `
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:11px;">
+        <div class="avatar">${initials(S.user.name)}</div>
+        <div><h1>${S.user.name}</h1><div class="muted" style="font-size:12px;">Nr. ${S.user.id}</div></div>
+      </div>
+      <button class="btn btn-ghost" id="logout" style="padding:8px;">Abmelden</button>
+    </div>`;
+  const tabs = `<div class="tabs">
+      <div class="tab ${S.empTab==='avail'?'active':''}" data-tab="avail">Verfügbarkeit</div>
+      <div class="tab ${S.empTab==='time'?'active':''}" data-tab="time">Zeiterfassung</div>
+    </div>`;
+  const inner = S.empTab==='time' ? empTimeHTML() : empAvailHTML();
+  APP.innerHTML = topbar + `<div class="screen">` + tabs + inner + `</div>`;
+
+  document.getElementById('logout').onclick=()=>{ resetLogin(); render(); };
+  APP.querySelectorAll('[data-tab]').forEach(t=>t.onclick=()=>{ S.empTab=t.dataset.tab; renderEmployee(); });
+  if(S.empTab==='time') wireEmpTime(); else wireEmpAvail();
+}
+
+function empAvailHTML(){
+  const w=weekMeta(S.offset);
+  const rows = DAYS.map((d,idx)=>{
+    const day=S.data[d[0]]||{a:false};
+    const on=day.a;
+    return `<div class="day ${on?'on':'off'}" data-day="${d[0]}">
+      <div class="chk" data-toggle="${d[0]}">${on?I.check:''}</div>
+      <div class="dlabel"><b>${d[2]}</b><span>${dayDate(S.offset,idx)}</span></div>
+      ${on
+        ? `<button class="timechip" data-time="${d[0]}">${I.clock}<span>${dayLabel(day)}</span></button>`
+        : `<span class="offlabel">Nicht verfügbar</span>`}
+    </div>`;
+  }).join('');
+  return `
+      <div class="weeknav">
+        <button class="navbtn" id="prev">${I.left}</button>
+        <div class="wlabel"><b>KW ${w.num}</b><span>${fmtRange(S.offset)}</span></div>
+        <button class="navbtn" id="next">${I.right}</button>
+      </div>
+      <div class="gw ${S.gwOpen?'open':''}" id="gw">
+        <div class="gw-head" id="gwHead">
+          <div class="ic">${I.cweek}</div>
+          <div class="t"><b>Ganze Woche</b><span>auf alle Tage anwenden</span></div>
+          <div class="chev">${I.chev}</div>
+        </div>
+        <div class="gw-body">
+          <div class="gw-act on" data-bulk="all"><div class="box">${I.check}</div>Alle Tage verfügbar</div>
+          <div class="gw-act off" data-bulk="none"><div class="box"></div>Alle Tage nicht verfügbar</div>
+          <div class="gw-act neutral" data-bulk="weekdays"><div class="box">${I.bag}</div>Nur Mo–Fr verfügbar</div>
+          <div class="gw-divider"></div>
+          <div class="gw-time">
+            ${I.clock}<div class="lab">Uhrzeit für alle grünen Tage</div>
+            <button class="timechip" data-time="__all"><span>${S.defaultTime.from==='Egal'?'Egal':(PRESETS.includes(S.defaultTime.from)?S.defaultTime.from:S.defaultTime.from+'–'+S.defaultTime.to)}</span></button>
+          </div>
+        </div>
+      </div>
+      ${rows}
+      <div class="savebar">
+        <div class="status">${I.check}<span>Änderungen werden automatisch gespeichert</span></div>
+        <button class="btn btn-primary" id="done" style="width:100%;">Fertig</button>
+      </div>`;
+}
+function wireEmpAvail(){
+  document.getElementById('prev').onclick=()=>changeWeek(-1);
+  document.getElementById('next').onclick=()=>changeWeek(1);
+  document.getElementById('done').onclick=async()=>{ await persist(); toast('Gespeichert'); resetLogin(); render(); };
+  document.getElementById('gwHead').onclick=()=>{ S.gwOpen=!S.gwOpen; document.getElementById('gw').classList.toggle('open',S.gwOpen); };
+  APP.querySelectorAll('[data-toggle]').forEach(el=>el.parentElement.onclick=(e)=>{
+    if(e.target.closest('[data-time]')) return;
+    const k=el.parentElement.dataset.day; const day=S.data[k];
+    if(day.a){ S.data[k]={a:false}; }
+    else { S.data[k]={a:true, from:S.defaultTime.from, to:S.defaultTime.to}; }
+    persist(); renderEmployee();
+  });
+  APP.querySelectorAll('[data-time]').forEach(el=>el.onclick=(e)=>{ e.stopPropagation(); openPicker(el.dataset.time); });
+  APP.querySelectorAll('[data-bulk]').forEach(el=>el.onclick=()=>{
+    const b=el.dataset.bulk; const dt=S.defaultTime;
+    DAYS.forEach((d,i)=>{
+      if(b==='all') S.data[d[0]]={a:true,from:dt.from,to:dt.to};
+      else if(b==='none') S.data[d[0]]={a:false};
+      else if(b==='weekdays') S.data[d[0]] = (i<5)?{a:true,from:dt.from,to:dt.to}:{a:false};
+    });
+    persist(); S.gwOpen=true; renderEmployee();
+  });
+}
+
+/* ---------- ZEITERFASSUNG (Stempeluhr, § 4 ArbZG) ---------- */
+const WD=['Mo','Di','Mi','Do','Fr','Sa','So'];
+const DOWKEYS=['mon','tue','wed','thu','fri','sat','sun'];
+function dowKeyToday(){ return DOWKEYS[(new Date().getDay()+6)%7]; }
+function nowHM(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function hmToMin(hm){ const p=hm.split(':'); return (+p[0])*60+(+p[1]); }
+function minToHHMM(min){ min=Math.max(0,Math.round(min)); return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0'); }
+function req4(w){ if(w>540) return 45; if(w>360) return 30; return 0; }
+function normalizeEntry(t){
+  if(!t) return {sessions:[],openBreak:null};
+  if(t.sessions) return t;
+  if(t.in) return {sessions:[{in:t.in,out:t.out||null,breaks:t.breaks||[]}], openBreak:t.openBreak||null};
+  return {sessions:[],openBreak:null};
+}
+function insertBreakInterval(iv, bs, be){
+  for(let i=0;i<iv.length;i++){
+    if(bs<iv[i][1] && be>iv[i][0]){
+      const a=iv[i][0], b=iv[i][1]; iv.splice(i,1);
+      const parts=[]; if(a<bs) parts.push([a,bs]); if(be<b) parts.push([be,b]);
+      iv.splice(i,0,...parts); return;
+    }
+  }
+}
+function computeDay(t, live){
+  t=normalizeEntry(t);
+  const sess=t.sessions.filter(s=>s&&s.in);
+  if(!sess.length) return {net:0,brk:0,validBreak:0,breaks:[],notes:[],running:false,gross:0,sessAdj:{}};
+  const now = live ? hmToMin(nowHM()) : null;
+  let gross=0, deduct=0, validBreak=0, running=false;
+  const disp=[]; const notes=[]; const workIntervals=[]; const gaps=[];
+  sess.forEach((s,si)=>{
+    const sin=hmToMin(s.in); let sout;
+    if(s.out) sout=hmToMin(s.out); else if(live){ sout=now; running=true; } else { return; }
+    if(sout<sin) sout=sin; gross += (sout-sin);
+    const bks=(s.breaks||[]).slice().filter(b=>b&&b.s);
+    if(t.openBreak && !s.out && live) bks.push({s:t.openBreak,e:null});
+    bks.sort((a,b)=>hmToMin(a.s)-hmToMin(b.s));
+    let cursor=sin;
+    bks.forEach(b=>{
+      const bs=hmToMin(b.s); let be=b.e?hmToMin(b.e):(live?now:bs); if(be<bs) be=bs;
+      let dur=be-bs, redExt=0, vEnd=be; if(dur<15){ vEnd=bs+15; redExt=15-dur; }
+      const vDur=vEnd-bs; deduct+=vDur; validBreak+=vDur;
+      disp.push({s:b.s,e:minToHHMM(vEnd),red:redExt,kind:'stamped'});
+      if(bs>cursor) workIntervals.push([cursor,bs]); cursor=Math.max(cursor,vEnd);
+    });
+    if(sout>cursor) workIntervals.push([cursor,sout]);
+    if(si>0){ const prev=sess[si-1]; if(prev.out){ const gap=sin-hmToMin(prev.out); if(gap>=15){ validBreak+=gap; gaps.push({s:prev.out,e:s.in,min:gap,sessIdx:si}); } } }
+  });
+  const firstIn=hmToMin(sess[0].in); const lastS=sess[sess.length-1];
+  const lastOut = lastS.out ? hmToMin(lastS.out) : (live?now:firstIn);
+  let X=0; while(X<=gross){ const w=gross-deduct-X; if(validBreak+X>=req4(w)) break; X++; }
+  const topUp=X;
+  if(topUp>0){
+    deduct+=topUp; validBreak+=topUp;
+    if(gaps.length){
+      const g=gaps[0]; const newEnd=hmToMin(g.e)+topUp;
+      disp.push({s:g.s,e:minToHHMM(newEnd),red:topUp,kind:'gapext',sessIdx:g.sessIdx,newIn:minToHHMM(newEnd)});
+      gaps.slice(1).forEach(x=>disp.push({s:x.s,e:x.e,red:0,kind:'gap'}));
+    } else {
+      const mid=Math.round((firstIn+lastOut)/2 - topUp/2);
+      disp.push({s:minToHHMM(mid),e:minToHHMM(mid+topUp),red:topUp,kind:'auto'});
+      insertBreakInterval(workIntervals, mid, mid+topUp);
+    }
+  } else gaps.forEach(x=>disp.push({s:x.s,e:x.e,red:0,kind:'gap'}));
+  let guard=0;
+  while(guard++<12){
+    workIntervals.sort((a,b)=>a[0]-b[0]);
+    const viol=workIntervals.find(iv=>(iv[1]-iv[0])>360);
+    if(!viol) break;
+    const cut=viol[0]+360; deduct+=15; validBreak+=15;
+    disp.push({s:minToHHMM(cut),e:minToHHMM(cut+15),red:15,kind:'auto6'});
+    if(notes.indexOf('Länger als 6 Std. am Stück – Pause ergänzt')<0) notes.push('Länger als 6 Std. am Stück – Pause ergänzt');
+    insertBreakInterval(workIntervals, cut, cut+15);
+  }
+  disp.sort((a,b)=>hmToMin(a.s)-hmToMin(b.s));
+  const sessAdj={}; disp.forEach(d=>{ if(d.kind==='gapext') sessAdj[d.sessIdx]=d.newIn; });
+  return {net:Math.max(0,gross-deduct), brk:deduct, validBreak, breaks:disp, notes, running, gross, sessAdj};
+}
+/* --- Zeiterfassung ---
+   Eine Zeile pro (mitarbeiter, woche). Die ganze Wochenstruktur liegt als JSON im Feld "sessions". */
+async function loadTimeWeek(id){
+  const w = weekMeta(0);
+  const woche = w.year+'-'+String(w.num).padStart(2,'0');
+  const emp = S.employees.find(e=>e.id===id);
+  if(!emp || !emp.recId) return null;
+  const items = await pbList('zeiten', `mitarbeiter="${emp.recId}" && datum="${woche}"`);
+  if(!items.length) return null;
+  try{ return JSON.parse(items[0].sessions); }catch(e){ return null; }
+}
+async function saveTimeWeek(){
+  const w = weekMeta(0);
+  const woche = w.year+'-'+String(w.num).padStart(2,'0');
+  const emp = S.user;
+  if(!emp || !emp.recId) return;
+  const items = await pbList('zeiten', `mitarbeiter="${emp.recId}" && datum="${woche}"`);
+  const body = JSON.stringify({ mitarbeiter: emp.recId, datum: woche, sessions: JSON.stringify(S.timeWeek||{}) });
+  if(items.length){
+    await pbFetch('/collections/zeiten/records/'+items[0].id, {method:'PATCH', body});
+  } else {
+    await pbFetch('/collections/zeiten/records', {method:'POST', body});
+  }
+}
+function weekNetSum(){ let s=0; DAYS.forEach(d=>{ const e=(S.timeWeek||{})[d[0]]; if(e) s+=computeDay(e, d[0]===dowKeyToday()).net; }); return s; }
+
+function breakTag(b){
+  if(b.kind==='gap') return 'zwischen Schichten';
+  if(b.kind==='gapext') return 'zwischen Schichten, rot +'+b.red+' min';
+  if(b.kind==='auto') return '§4 ergänzt';
+  if(b.kind==='auto6') return '>6 Std ergänzt';
+  if(b.red>0) return 'rot +'+b.red+' min';
+  return '';
+}
+function empTimeHTML(){
+  const dk=dowKeyToday();
+  const t=normalizeEntry((S.timeWeek||{})[dk]);
+  const c=computeDay(t, true);
+  const openS=t.sessions.find(s=>!s.out);
+  const now=new Date();
+  const dstr = WD[(now.getDay()+6)%7]+', '+now.getDate()+'. '+MON[now.getMonth()];
+  let statusHTML, btns='';
+  if(t.openBreak && openS){
+    statusHTML=`<span class="pill brk"><span class="dot" style="background:#ef9f27"></span>In Pause seit ${t.openBreak}</span>`;
+    btns=`<button class="bigbtn pauseend" data-act="breakend">${I.coffee} Pause beenden</button><button class="bigbtn gehen" data-act="out">${I.stopp} Gehen</button>`;
+  } else if(openS){
+    statusHTML=`<span class="pill in"><span class="dot" style="background:var(--green)"></span>Eingestempelt seit ${openS.in}</span>`;
+    btns=`<button class="bigbtn pause" data-act="breakstart">${I.coffee} Pause</button><button class="bigbtn gehen" data-act="out">${I.stopp} Gehen</button>`;
+  } else {
+    const last=t.sessions.length?t.sessions[t.sessions.length-1]:null;
+    statusHTML = last ? `<span class="pill out">Letzte Schicht bis ${last.out}</span>` : `<span class="pill out">Nicht eingestempelt</span>`;
+    btns=`<button class="bigbtn kommen" data-act="in" style="width:100%">${I.play} ${last?'Weitere Schicht':'Kommen'}</button>`;
+  }
+  let card='';
+  if(t.sessions.length){
+    let rows='';
+    t.sessions.forEach((s,i)=>{ const adj=c.sessAdj&&c.sessAdj[i]; const inD=adj?`<span class="bred">${adj}</span>`:s.in; rows+=`<div class="trow"><span class="k">Schicht${t.sessions.length>1?' '+(i+1):''}</span><span>${inD} – ${s.out||'läuft'}</span></div>`; });
+    c.breaks.forEach(b=>{ const tag=breakTag(b); const red=b.red>0||b.kind!=='stamped'; rows+=`<div class="trow"><span class="k">Pause</span><span class="${red?'bred':''}">${b.s}–${b.e}${tag?` <span class="btag">(${tag})</span>`:''}</span></div>`; });
+    rows+=`<div class="trow total"><span>${c.running?'Bisher':'Gearbeitet'}</span><span id="runCounter">${minToHHMM(c.net)} Std</span></div>`;
+    if(c.brk>0) rows+=`<div class="trow" style="margin-top:0"><span class="k" style="font-size:12px">abzgl. Pause</span><span style="font-size:12px;color:var(--muted)">${c.brk} min</span></div>`;
+    c.notes.forEach(n=>{ rows+=`<div class="trow" style="margin-top:2px"><span class="bred" style="font-size:11.5px">Hinweis: ${n}</span></div>`; });
+    card=`<div class="todaycard"><div class="h">Heute</div>${rows}</div>`;
+  }
+  return `
+    <div class="clockbig"><div class="t" id="bigClock">--:--:--</div><div class="d">${dstr}</div></div>
+    <div class="tstatus">${statusHTML}</div>
+    ${btns?`<div class="stampbtns">${btns}</div>`:''}
+    ${card}
+    <div class="weeksum">Diese Woche gesamt: <b style="color:var(--ink)">${minToHHMM(weekNetSum())} Std</b></div>
+    <div class="status" style="margin-top:18px">${I.check}<span>Stempelzeiten werden automatisch gespeichert</span></div>`;
+}
+function wireEmpTime(){
+  startClock();
+  APP.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
+    const dk=dowKeyToday(); if(!S.timeWeek) S.timeWeek={};
+    const t=normalizeEntry(S.timeWeek[dk]);
+    const hm=nowHM(); const act=b.dataset.act;
+    const openS=t.sessions.find(s=>!s.out);
+    if(act==='in'){ if(!openS) t.sessions.push({in:hm,out:null,breaks:[]}); }
+    else if(act==='breakstart'){ if(openS && !t.openBreak) t.openBreak=hm; }
+    else if(act==='breakend'){ if(t.openBreak && openS){ openS.breaks.push({s:t.openBreak,e:hm}); t.openBreak=null; } }
+    else if(act==='out'){ if(openS){ if(t.openBreak){ openS.breaks.push({s:t.openBreak,e:hm}); t.openBreak=null; } openS.out=hm; } }
+    S.timeWeek[dk]=t; saveTimeWeek(); renderEmployee();
+  });
+}
+function startClock(){
+  const upd=()=>{
+    const el=document.getElementById('bigClock');
+    if(!el){ if(S.clockTimer){clearInterval(S.clockTimer); S.clockTimer=null;} return; }
+    const n=new Date();
+    el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+    const rc=document.getElementById('runCounter'); const t=normalizeEntry((S.timeWeek||{})[dowKeyToday()]);
+    if(rc && t.sessions.some(s=>!s.out)) rc.textContent=minToHHMM(computeDay(t,true).net)+' Std';
+  };
+  upd(); if(S.clockTimer) clearInterval(S.clockTimer); S.clockTimer=setInterval(upd,1000);
+}
+
+/* ---------- PICKER ---------- */
+function openPicker(target){
+  let cur;
+  if(target==='__all') cur={...S.defaultTime};
+  else { const day=S.data[target]; cur={from:day.from||'Egal', to:day.to||'—'}; }
+  S.picker={ target, from:cur.from, to:cur.to };
+  const ov=document.createElement('div'); ov.className='overlay'; ov.id='pickerOverlay';
+  const title = target==='__all' ? 'Uhrzeit für alle grünen Tage' : 'Zeit wählen';
+  const subt = target==='__all' ? 'Gilt für alle verfügbaren Tage dieser Woche'
+    : (DAYS.find(d=>d[0]===target)[1]);
+  ov.innerHTML=`
+    <div class="sheet">
+      <div class="sheet-head">${I.clock}<b>${title}</b></div>
+      <p class="sheet-sub">${subt}</p>
+      <div class="wheels">
+        <div class="wheel-col">
+          <div class="wl">Von</div>
+          <div class="wheel scroll-hide" id="wFrom"><div class="wheel-band"></div><div class="wheel-list" id="wFromList"></div></div>
+        </div>
+        <div class="wheel-dash">${I.dash}</div>
+        <div class="wheel-col">
+          <div class="wl">Bis</div>
+          <div class="wheel scroll-hide" id="wTo"><div class="wheel-band"></div><div class="wheel-list" id="wToList"></div></div>
+        </div>
+      </div>
+      <div class="result" id="pickResult"></div>
+      <div class="presets-note">
+        <div class="h">Ganz oben in der Liste wählbar:</div>
+        ${PRESETS.map(p=>`<span class="pchip">${p}</span>`).join('')}
+        <span class="pchip">dann 06:00 … 21:00</span>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn" id="pickCancel">Abbrechen</button>
+        <button class="btn btn-primary" id="pickApply">Übernehmen</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+
+  buildWheel('wFrom', FROM_OPTIONS, S.picker.from, (v)=>{ S.picker.from=v; onFromChange(); });
+  buildWheel('wTo', TO_OPTIONS, S.picker.to, (v)=>{ S.picker.to=v; updateResult(); });
+  onFromChange(true);
+
+  ov.onclick=(e)=>{ if(e.target===ov) closePicker(); };
+  document.getElementById('pickCancel').onclick=closePicker;
+  document.getElementById('pickApply').onclick=applyPicker;
+}
+function onFromChange(initial){
+  const isPreset = PRESETS.includes(S.picker.from);
+  const wTo=document.getElementById('wTo');
+  wTo.classList.toggle('disabled', isPreset);
+  if(isPreset){ S.picker.to='—'; }
+  else {
+    if(!initial){
+      const fi=TIMES.indexOf(S.picker.from);
+      const ti=TIMES.indexOf(S.picker.to);
+      if(S.picker.to==='—' || ti<=fi){
+        S.picker.to = TIMES[Math.min(fi+1, TIMES.length-1)];
+        setWheel('wTo', TO_OPTIONS.indexOf(S.picker.to));
+      }
+    }
+  }
+  updateResult();
+}
+function updateResult(){
+  const r=document.getElementById('pickResult'); if(!r) return;
+  const p=S.picker;
+  if(PRESETS.includes(p.from)) r.innerHTML=`<span class="muted">Verfügbar</span> <b>${p.from}</b>`;
+  else r.innerHTML=`<span class="muted">Verfügbar</span> <b>${p.from} – ${p.to==='—'?'…':p.to}</b>`;
+}
+function buildWheel(id, options, selected, onChange){
+  const wheel=document.getElementById(id);
+  const list=wheel.querySelector('.wheel-list');
+  list.innerHTML='<div style="height:72px"></div>'+options.map((o,i)=>`<div class="wheel-item" data-i="${i}">${o}</div>`).join('')+'<div style="height:72px"></div>';
+  const items=list.querySelectorAll('.wheel-item');
+  let idx=Math.max(0, options.indexOf(selected)); if(idx<0) idx=0;
+  function mark(i){ items.forEach(it=>it.classList.toggle('sel', +it.dataset.i===i)); }
+  mark(idx);
+  requestAnimationFrame(()=>{ wheel.scrollTop=idx*36; });
+  let tmr;
+  wheel.addEventListener('scroll',()=>{
+    const i=Math.round(wheel.scrollTop/36); mark(Math.max(0,Math.min(options.length-1,i)));
+    clearTimeout(tmr);
+    tmr=setTimeout(()=>{
+      const fi=Math.max(0,Math.min(options.length-1,Math.round(wheel.scrollTop/36)));
+      wheel.scrollTop=fi*36; mark(fi); onChange(options[fi]);
+    },90);
+  },{passive:true});
+  wheel._mark=mark;
+}
+function setWheel(id, i){ const w=document.getElementById(id); if(!w) return; w.scrollTop=i*36; if(w._mark) w._mark(i); }
+function closePicker(){ const ov=document.getElementById('pickerOverlay'); if(ov) ov.remove(); S.picker=null; }
+function applyPicker(){
+  const p=S.picker; let from=p.from, to=PRESETS.includes(p.from)?'—':p.to;
+  if(!PRESETS.includes(from) && (to==='—')) to=from; // safety
+  if(p.target==='__all'){
+    S.defaultTime={from,to};
+    DAYS.forEach(d=>{ if(S.data[d[0]].a) S.data[d[0]]={a:true,from,to}; });
+  } else {
+    S.data[p.target]={a:true,from,to};
+  }
+  persist(); closePicker(); renderEmployee();
+}
+
+/* ---------- PLANNER ---------- */
+async function loadPlanner(){
+  S.plannerLoading=true; render();
+  const rows=[];
+  for(const e of S.employees){ rows.push({emp:e, data: await loadAvail(e.id, S.offset)}); }
+  S.plannerRows=rows; S.plannerLoading=false; render();
+}
+async function loadPlannerTime(){
+  S.plTimeLoading=true; render();
+  const w=weekMeta(S.offset); const woche=w.year+'-'+String(w.num).padStart(2,'0'); const rows=[];
+  for(const e of S.employees){
+    let data=null;
+    if(e.recId){
+      const items = await pbList('zeiten', `mitarbeiter="${e.recId}" && datum="${woche}"`);
+      if(items.length){ try{ data=JSON.parse(items[0].sessions); }catch(_){ data=null; } }
+    }
+    rows.push({emp:e, data});
+  }
+  S.plTimeRows=rows; S.plTimeLoading=false; render();
+}
+function renderPlanner(){
+  const w=weekMeta(S.offset);
+  const tabs=`<div class="tabs">
+      <div class="tab ${S.plTab==='avail'?'active':''}" data-pltab="avail">Verfügbarkeit</div>
+      <div class="tab ${S.plTab==='time'?'active':''}" data-pltab="time">Zeiterfassung</div>
+    </div>`;
+  let body, legend, tools;
+  if(S.plTab==='time'){
+    if(S.plTimeLoading || !S.plTimeRows){ body=`<div class="loading">Lädt Zeitdaten…</div>`; }
+    else {
+      const head=`<tr><th class="name" style="text-align:left">Name</th>${DAYS.map(d=>`<th>${d[2]}</th>`).join('')}<th>Σ</th></tr>`;
+      const trs=S.plTimeRows.map(r=>{
+        let sum=0;
+        const cells=DAYS.map(d=>{
+          const e=r.data?r.data[d[0]]:undefined;
+          if(!e) return `<td><span class="cell-open">—</span></td>`;
+          const ne=normalizeEntry(e);
+          if(!ne.sessions.length) return `<td><span class="cell-open">—</span></td>`;
+          if(ne.sessions.some(s=>!s.out)) return `<td><span class="cell-run">läuft</span></td>`;
+          const c=computeDay(e,false); sum+=c.net;
+          return `<td><span class="cell-on">${minToHHMM(c.net)}</span></td>`;
+        }).join('');
+        return `<tr><td class="name">${r.emp.name}<div class="muted" style="font-size:11px;font-weight:500">Nr. ${r.emp.id}</div></td>${cells}<td><b>${minToHHMM(sum)}</b></td></tr>`;
+      }).join('');
+      body=`<div class="ptbl-wrap"><table class="ptable">${head}${trs}</table></div>`;
+    }
+    legend=`<div class="legend"><span><i style="background:var(--green)"></i>gearbeitete Std (Pause abgezogen)</span><span><i style="background:#d8d3c9"></i>keine Stempelung</span></div>`;
+    tools=`<button class="btn mini" id="exportTime">${I.dl} Zeiten als CSV exportieren</button>`;
+  } else {
+    if(S.plannerLoading || !S.plannerRows){ body=`<div class="loading">Lädt Planungsdaten…</div>`; }
+    else {
+      const head=`<tr><th class="name" style="text-align:left">Name</th>${DAYS.map(d=>`<th>${d[2]}</th>`).join('')}</tr>`;
+      const trs=S.plannerRows.map(r=>{
+        const cells=DAYS.map(d=>{
+          const day=r.data?r.data[d[0]]:null;
+          if(!r.data || day===undefined) return `<td><span class="cell-open">—</span></td>`;
+          if(!day.a) return `<td><span class="cell-off">frei</span></td>`;
+          return `<td><span class="cell-on">${dayLabel(day)}</span></td>`;
+        }).join('');
+        return `<tr><td class="name">${r.emp.name}<div class="muted" style="font-size:11px;font-weight:500">Nr. ${r.emp.id}</div></td>${cells}</tr>`;
+      }).join('');
+      body=`<div class="ptbl-wrap"><table class="ptable">${head}${trs}</table></div>`;
+    }
+    legend=`<div class="legend"><span><i style="background:var(--green)"></i>verfügbar (mit Zeit)</span><span><i style="background:var(--red)"></i>nicht verfügbar</span><span><i style="background:#d8d3c9"></i>noch nicht eingetragen</span></div>`;
+    tools=`<button class="btn mini" id="exportCsv">${I.dl} CSV exportieren (für Einsatzplan)</button>`;
+  }
+
+  APP.innerHTML=`
+    <div class="topbar">
+      <div class="planner-head">${I.users}<h1>Planung · alle Mitarbeiter</h1></div>
+      <button class="btn btn-ghost" id="plLogout">Abmelden</button>
+    </div>
+    <div class="screen">
+      ${tabs}
+      <div class="weeknav">
+        <button class="navbtn" id="plPrev">${I.left}</button>
+        <div class="wlabel"><b>KW ${w.num}</b><span>${fmtRange(S.offset)}</span></div>
+        <button class="navbtn" id="plNext">${I.right}</button>
+      </div>
+      ${legend}
+      ${body}
+      <div class="toolbar">
+        ${tools}
+        <button class="btn mini" id="toggleMgr">${I.users} Mitarbeiter verwalten</button>
+      </div>
+      ${S.showMgr?renderMgr():''}
+    </div>`;
+
+  document.getElementById('plLogout').onclick=()=>{ S.plannerRows=null; S.plTimeRows=null; S.showMgr=false; S.plTab='avail'; resetLogin(); render(); };
+  document.getElementById('plPrev').onclick=()=>{ S.offset--; S.plTab==='time'?loadPlannerTime():loadPlanner(); };
+  document.getElementById('plNext').onclick=()=>{ S.offset++; S.plTab==='time'?loadPlannerTime():loadPlanner(); };
+  APP.querySelectorAll('[data-pltab]').forEach(t=>t.onclick=()=>{
+    S.plTab=t.dataset.pltab;
+    if(S.plTab==='time' && !S.plTimeRows) loadPlannerTime(); else render();
+  });
+  const ec=document.getElementById('exportCsv'); if(ec) ec.onclick=exportCsv;
+  const et=document.getElementById('exportTime'); if(et) et.onclick=exportTimeCsv;
+  document.getElementById('toggleMgr').onclick=()=>{ S.showMgr=!S.showMgr; render(); };
+  if(S.showMgr) wireMgr();
+}
+function renderMgr(){
+  return `<div class="empmgr card" style="padding:14px 16px;">
+    <div class="section-label" style="margin-top:0">Mitarbeiter & Personalnummern</div>
+    ${S.employees.slice().sort((a,b)=>a.id-b.id).map(e=>`
+      <div class="emp-row"><span class="num">${e.id}</span><span class="nm">${e.name}</span>
+        <button class="btn btn-ghost mini" data-resetpin="${e.id}" style="padding:6px 10px;font-size:12px;">PIN zurücksetzen</button>
+        <button class="del" data-del="${e.id}">${I.trash}</button></div>`).join('')}
+    <div class="add-form">
+      <input class="numf" id="newNum" placeholder="Nr." inputmode="numeric">
+      <input id="newName" placeholder="Name">
+      <button class="btn btn-primary mini" id="addEmp">Hinzufügen</button>
+    </div>
+    <div class="muted" style="font-size:11.5px;margin-top:10px;">Admin-Zugang zu dieser Ansicht: Personalnummer ${ADMIN_CODE}</div>
+  </div>`;
+}
+function wireMgr(){
+  APP.querySelectorAll('[data-resetpin]').forEach(b=>b.onclick=async()=>{
+    const emp = S.employees.find(e=>e.id===b.dataset.resetpin);
+    if(!emp || !emp.recId) return;
+    if(!confirm('PIN von '+emp.name+' auf '+DEFAULT_PIN+' zurücksetzen?\n\n'+emp.name+' muss beim nächsten Login eine neue PIN festlegen.')) return;
+    try{
+      const res = await pbFetch('/collections/mitarbeiter/records/'+emp.recId, {method:'PATCH', body: JSON.stringify({pin:DEFAULT_PIN})});
+      if(res.ok) toast('PIN zurückgesetzt auf '+DEFAULT_PIN);
+      else alert('Zurücksetzen fehlgeschlagen.');
+    }catch(e){ alert('Server nicht erreichbar.'); }
+  });
+  APP.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{
+    const emp = S.employees.find(e=>e.id===b.dataset.del);
+    if(!emp) return;
+    if(!confirm('Mitarbeiter '+emp.name+' wirklich löschen?')) return;
+    if(emp.recId){
+      // Nicht hart löschen, sondern auf inaktiv setzen (Daten/History bleiben erhalten)
+      await pbFetch('/collections/mitarbeiter/records/'+emp.recId, {method:'PATCH', body: JSON.stringify({aktiv:false})});
+    }
+    await loadEmployees(); loadPlanner();
+  });
+  const add=document.getElementById('addEmp');
+  if(add) add.onclick=async()=>{
+    const num=document.getElementById('newNum').value.trim();
+    const name=document.getElementById('newName').value.trim();
+    if(!num||!name){ return; }
+    if(S.employees.some(e=>e.id===num)){ alert('Personalnummer existiert bereits'); return; }
+    const body = JSON.stringify({personalnummer:num, name, pin:'1111', rolle:'mitarbeiter', aktiv:true});
+    const res = await pbFetch('/collections/mitarbeiter/records', {method:'POST', body});
+    if(!res.ok){ alert('Konnte nicht angelegt werden (Nummer evtl. schon vergeben).'); return; }
+    await loadEmployees();
+    S.showMgr=true; loadPlanner();
+  };
+}
+function exportCsv(){
+  const w=weekMeta(S.offset);
+  const header=['Name','Personalnr.',...DAYS.map(d=>d[2])];
+  const lines=[header.join(';')];
+  S.plannerRows.forEach(r=>{
+    const cells=DAYS.map(d=>{ const day=r.data?r.data[d[0]]:undefined; if(r.data&&day!==undefined) return csvCell(day); return ''; });
+    lines.push([r.emp.name, r.emp.id, ...cells].join(';'));
+  });
+  const csv='\uFEFF'+lines.join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='Verfuegbarkeit_KW'+w.num+'_'+w.year+'.csv'; a.click();
+  URL.revokeObjectURL(url); toast('CSV exportiert');
+}
+
+function exportTimeCsv(){
+  const w=weekMeta(S.offset);
+  const header=['Name','Personalnr.',...DAYS.map(d=>d[2]),'Summe'];
+  const lines=[header.join(';')];
+  (S.plTimeRows||[]).forEach(r=>{
+    let sum=0;
+    const cells=DAYS.map(d=>{ const e=r.data?r.data[d[0]]:undefined; if(!e) return ''; const ne=normalizeEntry(e); if(!ne.sessions.length) return ''; if(ne.sessions.some(s=>!s.out)) return 'laeuft'; const c=computeDay(e,false); sum+=c.net; return minToHHMM(c.net).replace(':',','); });
+    lines.push([r.emp.name, r.emp.id, ...cells, minToHHMM(sum).replace(':',',')].join(';'));
+  });
+  const csv='\uFEFF'+lines.join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='Arbeitszeit_KW'+w.num+'_'+w.year+'.csv'; a.click();
+  URL.revokeObjectURL(url); toast('Zeiten exportiert');
+}
+
+/* ---------- boot ---------- */
+(function(){ render(); initEmployees(); })();
+async function initEmployees(){
+  try{
+    await loadEmployees();
+    if(S.employees.length){ if(S.screen==='login') render(); return; }
+  }catch(e){ console.error(e); }
+  S.empMissing=true; if(S.screen==='login') render();
+}
+</script>
+</body>
+</html>
